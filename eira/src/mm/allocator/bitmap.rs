@@ -182,6 +182,10 @@ impl BitmapAllocator {
         let bit = idx % 8;
         // SAFETY: exclusive access via &mut self.
         let bitmap = unsafe { self.bitmap_mut() };
+        assert!(
+            byte < bitmap.len(),
+            "frame index out of bitmap bounds: {frame:?}"
+        );
         bitmap[byte] |= 1 << bit;
     }
 
@@ -193,6 +197,10 @@ impl BitmapAllocator {
         let bit = idx % 8;
         // SAFETY: exclusive access via &mut self.
         let bitmap = unsafe { self.bitmap_mut() };
+        assert!(
+            byte < bitmap.len(),
+            "frame index out of bitmap bounds: {frame:?}"
+        );
         bitmap[byte] &= !(1 << bit);
     }
 
