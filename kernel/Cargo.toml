@@ -1,0 +1,12 @@
+[package]
+name = "arc"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "arc"
+path = "src/main.rs"
+harness = false
+
+[dependencies]
+limine = "0.6.3"
