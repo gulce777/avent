@@ -1,0 +1,23 @@
+[default_config]
+assembler = "gas"
+diagnostics = true
+default_diagnostics = true
+instruction_set = "x86/x86-64"
+
+[[project]]
+assembler = "gas"
+path = "kernel/src/arch/x86_64"
+instruction_set = "x86/x86-64"
+[project.opts]
+compile_flags_txt = [
+    "-target", "x86_64-unknown-none"
+]
+
+[[project]]
+assembler = "gas"
+path = "kernel/src/arch/aarch64"
+instruction_set = "arm64"
+[project.opts]
+compile_flags_txt = [
+    "-target", "aarch64-unknown-none"
+]
