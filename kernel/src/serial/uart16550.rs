@@ -6,8 +6,6 @@
 
 use core::fmt;
 
-const COM1: u16 = 0x3F8;
-
 const LSR_THRE: u8 = 1 << 5;
 
 /// UART 16550 driver.
@@ -19,18 +17,25 @@ pub struct Uart16550 {
 }
 
 impl Uart16550 {
-    /// Initialise the UART at the default COM1 address.
+    /// Create and start a new UART instance.
+    ///
+    /// You need to provide a base port, this function also
+    /// sets up the hardware so it is ready to print.
     pub unsafe fn new(base: u16) -> Self {
         let uart = Self { base };
         unsafe { uart.init() };
         uart
     }
 
-    /// Configure the UART: 115200 8N1, FIFOs enabled, interrupts disabled.
+    /// Set up the UART hardware.
+    ///
+    /// It sets the speed to 115200 baud, format to 8 data bits,
+    /// and 1 stop bits (8N1). Interrupts are turned off because we only
+    /// wait and write.
     ///
     /// # Safety
     ///
-    /// Caller must ensure no concurrent access to the same UART.
+    /// You must make sure no other code is trying to use the same UART port at the same time.
     unsafe fn init(&self) {
         unsafe {
             // Disable all interrupts.
@@ -39,27 +44,28 @@ impl Uart16550 {
             // Enable DLAB to set baud rate divisor.
             self.write_reg(3, 0x80);
 
-            // Divisor = 1 -> 115200 baud
+            // Divisor to 1 (115250 baud)
             self.write_reg(0, 0x01); // LSB
             self.write_reg(1, 0x00); // MSB
 
             // 8 data bits, no parity, 1 stop bit (8N1). Clears DLAB.
             self.write_reg(3, 0x03);
 
-            // Enable and reset FIFOs, 14-byte trigger level.
+            // Enable and reset FIFOs.
             self.write_reg(2, 0xC7);
             self.write_reg(4, 0x03);
         }
     }
 
-    /// Block until the transmit holding register is empty, then send a byte.
+    /// Wait until the hardware is ready, then send one byte.
     fn write_byte(&self, byte: u8) {
         // Spin until the transmit holding register is empty.
-        // SAFETY: reading the Line Status Register is always safe.
+        // SAFETY: reading the LSR is always safe.
         while unsafe { self.read_reg(5) } & LSR_THRE == 0 {
             core::hint::spin_loop();
         }
-        // SAFETY: transmit register is ready.
+
+        // SAFETY: transmit register is empty.
         unsafe { self.write_reg(0, byte) };
     }
 

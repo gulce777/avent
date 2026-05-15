@@ -76,7 +76,6 @@ pub fn run_qemu(arch: &Arch, uefi: bool) -> Result<()> {
                 "-drive",
                 &format!("if=pflash,format=raw,readonly=on,file={}", code.display()),
             ]);
-            cmd.args(["-s", "-S"]);
             if vars.exists() {
                 cmd.args([
                     "-drive",

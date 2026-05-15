@@ -13,37 +13,42 @@ use core::fmt::Write;
 #[cfg(target_arch = "x86_64")]
 mod uart16550;
 
-#[cfg(target_arch = "aarch64")]
-mod pl011;
-
-#[cfg(target_arch = "aarch64")]
-use pl011::Pl011 as UartImpl;
 #[cfg(target_arch = "x86_64")]
 use uart16550::Uart16550 as UartImpl;
 
+#[cfg(target_arch = "x86_64")]
 static SERIAL: spin::Mutex<Option<UartImpl>> = spin::Mutex::new(None);
 
 /// Initialize the serial port.
 ///
 /// Must be called exactly once before any [`print!`]/[`println!`] invocation.
 pub fn init(hhdm_offset: usize) {
-    // SAFETY: We initialise the UART at the well-known platform address.
+    // SAFETY: We initialize the UART at the well-known platform address.
     // This is called once in early boot before any concurrent access.
 
     #[cfg(target_arch = "x86_64")]
     {
-        // Man, x86_64 is so nice. Serial ports use port I/O, which completely
-        // ignores the MMU and all that paging bullshit. You just `out dx, al`.
+        // honestly x86 is actually such a vibe for this. serial ports use port I/O
+        // so it completely ignores all the MMU/paging
         let _ = hhdm_offset;
 
+        // SAFETY: early boot
         let uart = unsafe { UartImpl::new(0x2F8) };
         *SERIAL.lock() = Some(uart);
     }
 
     #[cfg(target_arch = "aarch64")]
     {
-        // TODO(aarch64): i literally cannot even print "hi" until i write an
-        // entire VMM from scratch just to map this address.
+        // TODO(aarch64): bestie. arm is actually testing my sanity.
+        // literally everything is memory mapped. limine is cute for turning on the MMU
+        // but it COMPLETELY ignores device memory. so our serial port at 0x0900_0000
+        // is just unmapped.
+        //
+        // if i try to write to it rn, the cpu throws a massive data abort and instantly
+        // bricks the OS.
+        //
+        // so yeah, no logs for arm yet. i'm literally just trying to print "hi"
+        // but now i have to code an entire VMM from scratch to map this one address.
 
         let _ = hhdm_offset;
     }
@@ -54,13 +59,14 @@ pub fn init(hhdm_offset: usize) {
 /// Silently drops output if [`init`] has not been called yet.
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments<'_>) {
+    #[cfg(target_arch = "x86_64")]
     if let Some(uart) = SERIAL.lock().as_mut() {
         // Infallible: UART write never returns an error in our driver.
         let _ = uart.write_fmt(args);
     }
 }
 
-/// Print formatted text to the serial port, without a trailing newline.
+/// Print formatted text to the serial port without a trailing newline.
 ///
 /// Mirrors the standard [`std::print!`] macro.
 #[macro_export]
@@ -70,7 +76,7 @@ macro_rules! print {
     };
 }
 
-/// Print formatted text to the serial port, with a trailing newline.
+/// Print formatted text to the serial port with a trailing newline.
 ///
 /// Mirrors the standard [`std::println!`] macro.
 #[macro_export]
