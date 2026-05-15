@@ -121,7 +121,7 @@ impl BitmapAllocator {
             Some(a) => a,
             None => return, // overflow, skip
         };
-        let end_frame = PhysFrame::containing(end_addr);
+        let end_frame = PhysFrame::containing(end_addr.align_down(PAGE_SIZE));
 
         if start_frame >= end_frame {
             return;
