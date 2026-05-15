@@ -38,10 +38,8 @@ pub static FRAME_ALLOCATOR: Mutex<Option<BitmapAllocator>> = Mutex::new(None);
 /// - No other code may access physical memory outside the kernel image until
 ///   this function returns.
 pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespData>) {
-    {
-        let guard = FRAME_ALLOCATOR.lock();
-        assert!(guard.is_none(), "mm::init::init() called more than once");
-    }
+    let mut guard = FRAME_ALLOCATOR.lock();
+    assert!(guard.is_none(), "mm::init::init() called more than once");
 
     let hhdm_offset = hhdm.offset as usize;
 
@@ -131,7 +129,7 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
         allocator.total_frames() * PAGE_SIZE / (1024 * 1024),
     );
 
-    *FRAME_ALLOCATOR.lock() = Some(allocator);
+    *guard = Some(allocator);
 }
 
 /// Allocate a single physical frame.
