@@ -2,6 +2,7 @@
 #![no_main]
 
 mod arch;
+mod logger;
 mod serial;
 
 use limine::request::{FramebufferRequest, HhdmRequest, StackSizeRequest};
@@ -38,6 +39,11 @@ static _REQUESTS_END: RequestsEndMarker = RequestsEndMarker::new();
 /// Must only be called ONCE, from the assembly stub, on the boot CPU.
 #[unsafe(no_mangle)]
 pub extern "C" fn kmain() -> ! {
+    arch::disable_interrupts();
+
+    #[cfg(target_arch = "x86_64")]
+    arch::enable_sse();
+
     let hhdm_offset = HHDM_REQUEST
         .response()
         .expect("Limine did not provide HHDM offset")
@@ -46,11 +52,17 @@ pub extern "C" fn kmain() -> ! {
     serial::init(hhdm_offset);
 
     print!("\x1B[2J\x1B[H");
-    println!("[arc] kernel starting");
-    println!(
-        "[arc] base revision supported: {}",
-        BASE_REVISION.is_supported()
-    );
+
+    logger::init();
+
+    log::info!("kernel starting");
+
+    if BASE_REVISION.is_supported() {
+        log::debug!("limine base revision supported");
+    } else {
+        log::error!("limine base revision is not supported!");
+        panic!("incompatible bootloader");
+    }
 
     // If the bootloader set the revision field to 0, the requested revision is
     // supported. Any other value means an incompatible bootloader.
@@ -74,8 +86,6 @@ pub extern "C" fn kmain() -> ! {
             unsafe { draw_rect(fb_ptr, pitch, bpp, 100, 100, 200, 200, 0xFF_FF_FF_FF) };
         }
     }
-
-    panic!("test");
 
     #[cfg(target_arch = "aarch64")]
     // SAFETY: `dsb sy` is a memory barrier with no side effects beyond ordering.
@@ -123,6 +133,8 @@ unsafe fn draw_rect(
 #[cold]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
+    arch::disable_interrupts();
+
     println!("\n\x1B[1;31marc fault.\x1B[0m\n");
 
     let reason = info.message();

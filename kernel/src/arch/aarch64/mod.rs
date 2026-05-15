@@ -18,3 +18,10 @@ pub fn halt() {
     // SAFETY: `wfi` is always safe to execute at EL1/EL2.
     unsafe { core::arch::asm!("wfi", options(nomem, nostack, preserves_flags)) };
 }
+
+/// Disable hardware interrupts.
+#[inline]
+pub fn disable_interrupts() {
+    // SAFETY: msr daifset is safe to execute in kernel mode (EL1).
+    unsafe { core::arch::asm!("msr daifset, #0xf", options(nomem, nostack)) };
+}

@@ -10,4 +10,5 @@ harness = false
 
 [dependencies]
 limine = "0.6.3"
+log = { version = "0.4.29", default-features = false }
 spin = "0.11.0"
