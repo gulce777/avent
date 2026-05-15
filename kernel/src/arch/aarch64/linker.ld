@@ -1,6 +1,6 @@
 OUTPUT_FORMAT(elf64-littleaarch64)
 OUTPUT_ARCH(aarch64)
-ENTRY(_start_asm)
+ENTRY(_start)
 
 PHDRS
 {
@@ -12,15 +12,11 @@ PHDRS
 SECTIONS {
     . = 0xffffffff80000000;
 
-    .text : {
-        *(.text .text.*)
-    } :text
+    .text : { *(.text .text.*) } :text
 
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
-    .rodata : {
-        *(.rodata .rodata.*)
-    } :rodata
+    .rodata : { *(.rodata .rodata.*) } :rodata
 
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
@@ -33,12 +29,13 @@ SECTIONS {
     } :data
 
     .bss : {
+        . = ALIGN(16);
+        PROVIDE(__bss_start = .);
         *(.bss .bss.*)
         *(COMMON)
+        . = ALIGN(16);
+        PROVIDE(__bss_end = .);
     } :data
 
-    /DISCARD/ : {
-        *(.eh_frame*)
-        *(.note .note.*)
-    }
+    /DISCARD/ : { *(.eh_frame) *(.note .note.*) }
 }
