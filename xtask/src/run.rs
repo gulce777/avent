@@ -33,7 +33,6 @@ pub fn run_qemu(arch: &Arch, uefi: bool) -> Result<()> {
             cmd.args(["-cdrom", iso_path.to_str().unwrap()]);
             cmd.args(["-serial", "file:uefi_boot.log"]);
             cmd.args(["-serial", "stdio"]);
-            cmd.args(["-d", "int"]);
             cmd.args(["-no-reboot"]);
 
             if uefi {

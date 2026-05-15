@@ -11,7 +11,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(
     name = "xtask",
-    about = "Arc kernel build system",
+    about = "Eira build system",
     version,
     propagate_version = true
 )]
@@ -72,15 +72,15 @@ impl Arch {
     }
 
     pub fn target_json(&self) -> String {
-        format!("{}-arc.json", self.as_str())
+        format!("{}-eira.json", self.as_str())
     }
 
     pub fn iso(&self) -> String {
-        format!("arc-{}.iso", self.as_str())
+        format!("eira-{}.iso", self.as_str())
     }
 
     pub fn linker_script(&self) -> String {
-        format!("kernel/src/arch/{}/linker.ld", self.as_str())
+        format!("eira/src/arch/{}/linker.ld", self.as_str())
     }
 
     pub fn ovmf_code(&self) -> String {
@@ -155,8 +155,6 @@ fn run_cli() -> Result<()> {
 }
 
 fn main() {
-    let cli = Cli::parse();
-
     let result = match run_cli() {
         Ok(_) => {
             println!();

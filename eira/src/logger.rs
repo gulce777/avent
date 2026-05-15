@@ -5,9 +5,9 @@
 
 use log::{Level, LevelFilter, Metadata, Record};
 
-struct ArcLogger;
+struct EiraLogger;
 
-impl log::Log for ArcLogger {
+impl log::Log for EiraLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         metadata.level() <= Level::Trace
     }
@@ -41,7 +41,7 @@ impl log::Log for ArcLogger {
     fn flush(&self) {}
 }
 
-static LOGGER: ArcLogger = ArcLogger;
+static LOGGER: EiraLogger = EiraLogger;
 
 pub fn init() {
     unsafe {

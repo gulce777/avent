@@ -27,7 +27,7 @@ pub fn create_iso(arch: &Arch, release: bool) -> Result<()> {
     if !kernel.exists() {
         bail!("Kernel binary not found:   {}", kernel.display());
     }
-    fs::copy(&kernel, iso_root.join("boot").join("arc"))?;
+    fs::copy(&kernel, iso_root.join("boot").join("eira"))?;
     log_step!(1, 4, "Kernel binary copied");
 
     fs::copy(root.join("limine.conf"), limine_dir.join("limine.conf"))?;

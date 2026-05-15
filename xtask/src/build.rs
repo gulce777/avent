@@ -35,7 +35,7 @@ pub fn build_kernel(arch: &Arch, release: bool) -> Result<()> {
 
     let mut cmd = Command::new("cargo");
     cmd.current_dir(&root)
-        .args(["build", "--package", "arc"])
+        .args(["build", "--package", "eira"])
         .arg("--target")
         .arg(&target_json)
         .args([
@@ -67,5 +67,5 @@ pub fn kernel_bin_path(arch: &Arch, release: bool) -> PathBuf {
     root.join("target")
         .join(target_name)
         .join(profile)
-        .join("arc")
+        .join("eira")
 }
