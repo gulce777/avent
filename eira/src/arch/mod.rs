@@ -1,7 +1,7 @@
 //! Architecture-specific implementations.
 //!
 //! Exposes a unified [`Arch`] trait implemented by every supported target.
-//! Call sites use the [`Cpu`] type alias and never depend on a concrete
+//! Call sites use the [`Platform`] type alias and never depend on a concrete
 //! backend directly.
 //!
 //! # Supported architectures

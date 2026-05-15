@@ -48,7 +48,7 @@ pub extern "C" fn kmain() -> ! {
     #[cfg(target_arch = "x86_64")]
     arch::enable_sse();
 
-    serial::init(0);
+    serial::init();
     logger::init();
 
     let memmap = MEMORY_MAP_REQUEST

@@ -22,14 +22,12 @@ static SERIAL: spin::Mutex<Option<UartImpl>> = spin::Mutex::new(None);
 /// Initialize the serial port.
 ///
 /// Must be called exactly once before any [`print!`]/[`println!`] invocation.
-pub fn init(hhdm_offset: usize) {
+pub fn init() {
     // SAFETY: We initialize the UART at the well-known platform address.
     // This is called once in early boot before any concurrent access.
 
     #[cfg(target_arch = "x86_64")]
     {
-        let _ = hhdm_offset;
-
         // SAFETY: 0x2F8 is the standard COM2 base port address.
         // Called once in early boot before any concurrent access.
         let uart = unsafe { UartImpl::new(0x2F8) };
@@ -39,8 +37,6 @@ pub fn init(hhdm_offset: usize) {
     #[cfg(target_arch = "aarch64")]
     {
         // TODO: aarch64 serial output is not yet implemented.
-
-        let _ = hhdm_offset;
     }
 }
 
