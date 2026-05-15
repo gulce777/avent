@@ -228,12 +228,10 @@ pub fn run_allocator_tests() {
     // NOTE: double free test
     // calling mm:deallocate twice on the same OwnedFrame is a compile-time
     // error now! yay!! this panic is no longer EXPRESSIBLE! THANKS RUST!
-    /*let danger_frame = mm::allocate();
-    unsafe {
-        mm::deallocate(danger_frame);
-        log::warn!("a double-free panic should be triggered right now...");
-        mm::deallocate(danger_frame);
-    }*/
+    let danger_frame = mm::allocate();
+    mm::deallocate(danger_frame);
+    log::warn!("a double-free panic should be triggered right now...");
+    mm::deallocate(danger_frame);
 
     log::info!("all physical memory allocation tests completed.");
 }

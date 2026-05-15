@@ -7,17 +7,17 @@
 //! directly out of the first usable physical memory region, *before* handing
 //! any memory to the allocator.
 
+use super::addr::{PAGE_SIZE, PhysAddr};
+use super::allocator::bitmap::BitmapAllocator;
+use super::frame::OwnedFrame;
 use limine::memmap::MEMMAP_USABLE;
 use limine::request::{HhdmRespData, MemmapRespData, Response};
-use log;
 use spin::Mutex;
 
-use super::addr::{PAGE_SIZE, PhysAddr};
-use super::allocator::FrameAllocator;
-use super::allocator::bitmap::BitmapAllocator;
-use super::frame::{OwnedFrame, PhysFrame};
-
 /// The kernel-global physical frame allocator.
+///
+/// `None` until [`init`] completes. Wrapped in a [`Mutex`] because multiple
+/// cores may call [`allocate`] or [`deallocate`] concurrently.
 pub static FRAME_ALLOCATOR: Mutex<Option<BitmapAllocator>> = Mutex::new(None);
 
 /// Initialize the physical memory allocator from the Limine memory map.
@@ -27,9 +27,9 @@ pub static FRAME_ALLOCATOR: Mutex<Option<BitmapAllocator>> = Mutex::new(None);
 ///
 /// # Panics
 ///
-/// Panics if:
-/// - No usable memory region is large enough to hold the bitmap.
+/// - Called more than once.
 /// - The Limine memory map contains no usable entries.
+/// - No usable region is large enough to hold the bitmap.
 ///
 /// # Safety
 ///
@@ -50,7 +50,7 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
         .filter(|e| e.type_ == MEMMAP_USABLE)
         .map(|e| (e.base + e.length) as usize)
         .max()
-        .expect("no usable memory regions");
+        .expect("memory map contains no usable entries");
 
     let total_frames = (max_phys + PAGE_SIZE - 1) / PAGE_SIZE;
     let bitmap_bytes = (total_frames + 7) / 8;
@@ -83,15 +83,15 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
     // - The region is usable (not used by the kernel or Limine structures).
     // - We will not add this region to the allocator until after construction,
     //   preventing aliasing between the bitmap and allocatable frames.
-    // - We cast to 'static because the allocator must own the bitmap for its
-    //   entire lifetime; the kernel never exits, so this is sound.
+    // - We cast to `'static` because the allocator must own the bitmap for its
+    //   entire lifetime. The kernel never exits, so this is sound.
     let bitmap: &'static mut [u8] = unsafe {
         core::slice::from_raw_parts_mut((bitmap_phys + hhdm_offset) as *mut u8, bitmap_size)
     };
 
     bitmap.fill(0x00);
 
-    // SAFETY: bitmap is zeroed, correctly sized, and lives for 'static
+    // SAFETY: `bitmap` is zeroed, correctly sized, and has `'static` lifetime.
     let mut allocator = unsafe { BitmapAllocator::new(bitmap, hhdm_offset, max_phys) };
 
     let bitmap_end = bitmap_phys + bitmap_size;
@@ -104,7 +104,7 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
             let len = bitmap_phys.min(region_end) - region_base;
             if len > 0 {
                 if let Some(base) = PhysAddr::new(region_base) {
-                    // SAFETY: region is usable and not the bitmap.
+                    // SAFETY: sub-region does not overlap the bitmap.
                     unsafe { allocator.add_region(base, len) };
                 }
             }
@@ -115,7 +115,7 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
             let len = region_end - start;
             if len > 0 {
                 if let Some(base) = PhysAddr::new(start) {
-                    // SAFETY: region is usable and not the bitmap.
+                    // SAFETY: sub-region does not overlap the bitmap.
                     unsafe { allocator.add_region(base, len) };
                 }
             }
@@ -135,8 +135,9 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
 
 /// Allocate a single physical frame.
 ///
-/// Returns an [`OwnedFrame`] that must be explicitly freed via
-/// [`OwnedFrame::free`]. Dropping it without freeing will panic.
+/// Returns an [`OwnedFrame`] that must be explicitly returned to the allocator
+/// via [`OwnedFrame::free`] or [`deallocate`]. Dropping it without freeing will
+/// panic.
 ///
 /// # Panics
 ///
@@ -153,9 +154,9 @@ pub fn allocate() -> OwnedFrame {
 
 /// Return a previously allocated frame to the allocator.
 ///
-/// Prefer calling [`OwnedFrame::free`] directly; this function exists for
-/// call sites that already hold a lock on the allocator and need to avoid
-/// a secund acquisition.
+/// This is a convenience wrapper around [`OwnedFrame::free`]. Prefer calling
+/// `frame.free(&mut allocator)` directly when you already hold the allocator
+/// lock, to avoid acquiring it twice.
 ///
 /// # Panics
 ///

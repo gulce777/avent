@@ -14,15 +14,14 @@ use super::addr::{PAGE_SIZE, PhysAddr};
 
 /// A page-aligned physical memory frame of size `S` bytes.
 ///
-/// The const generic `S` must be a power of two. Use the type aliases [`Frame4K`],
-/// [`Frame2M`] and [`Frame1G`] for the common sizes.
+/// The const generic `S` must be a power of two. Use the type aliases
+/// [`Frame4K`], [`Frame2M`] and [`Frame1G`] for the common sizes.
 ///
-/// A `PhysFrame` is guaranteed to:
-/// - Be aligned to `S` bytes.
-/// - Not exceed the 52-bit physical address space.
+/// A `PhysFrame` is guaranteed to be aligned to `S` bytes and
+/// to not exceed the 52-bit physical address space.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PhysFrame<const S: usize = PAGE_SIZE> {
-    /// The base address of this frame. Alway aligned to `S`.
+    /// The base address of this frame. Always aligned to `S`.
     base: PhysAddr,
     _size: PhantomData<[u8; S]>,
 }
@@ -120,21 +119,37 @@ impl<const S: usize> fmt::Debug for PhysFrame<S> {
     }
 }
 
+/// An owned, non-`Copy` handle to a single physical frame.
+///
+/// Guarantees that each allocated frame has exactly one owner at any time.
+/// Double-free is a compile-time error. `free` consumes `self`, so the
+/// same `OwnedFrame` cannot be freed twice.
+///
+/// Dropping an `OwnedFrame` without calling [`free`](OwnedFrame::free)
+/// will panic.
 #[derive(Debug)]
 pub struct OwnedFrame {
     inner: PhysFrame,
 }
 
 impl OwnedFrame {
+    /// Wrap a raw `PhysFrame` in an `OwnedFrame`.
+    ///
+    /// Only the allocator should call this, hence `pub(crate)`.
     pub(crate) fn new(frame: PhysFrame) -> Self {
         Self { inner: frame }
     }
 
+    /// Returns the base physical address of this frame.
     #[inline]
     pub fn base(&self) -> PhysAddr {
         self.inner.base()
     }
 
+    /// Return this frame to `allocator`, consumes the `OwnedFrame`.
+    ///
+    /// After this call the frame may be handed out again by a future
+    /// [`allocate`](crate::mm::allocate) call.
     pub fn free(self, allocator: &mut impl FrameAllocator) {
         let this = core::mem::ManuallyDrop::new(self);
 
@@ -144,6 +159,8 @@ impl OwnedFrame {
 
 impl Drop for OwnedFrame {
     fn drop(&mut self) {
+        // Reaching here is always a bug. The frame was neither freed nor
+        // leaked via `ManuallyDrop`.
         panic!("owned frame dropped without being freed. {:?}", self.inner);
     }
 }
@@ -159,6 +176,7 @@ pub struct FrameRange<const S: usize = PAGE_SIZE> {
 }
 
 impl<const S: usize> FrameRange<S> {
+    /// Construct a `FrameRange` from an inclusive `[start, end]` pair.
     #[inline]
     pub const fn new(start: PhysFrame<S>, end: PhysFrame<S>) -> Self {
         Self { start, end }

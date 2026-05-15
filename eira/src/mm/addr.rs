@@ -5,19 +5,21 @@
 
 use core::fmt;
 
+/// The standard 4 KiB page size.
 pub const PAGE_SIZE: usize = 4096;
+/// The 2 MiB large page size.
 pub const LARGE_PAGE_SIZE: usize = 2 * 1024 * 1024;
+/// The 1 GiB huge page size.
 pub const HUGE_PAGE_SIZE: usize = 1024 * 1024 * 1024;
 
 /// A 64-bit physical memory address.
 ///
-/// On both x86_64 and aarch64, only the lower 52 bits are usable for physical
-/// addresses (with 4-level paging). This type enforces that the upper 12 bits
-/// are always zero.
+/// On both x86_64 and aarch64 with 4-level paging, only bits 0-51 are usable.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PhysAddr(usize);
 
 impl PhysAddr {
+    /// The largest representable physical address (2^52 - 1).
     pub const MAX: Self = Self((1usize << 52) - 1);
 
     /// Construct a `PhysAddr`, returning `None` if `addr` has bits set above
@@ -164,12 +166,15 @@ impl fmt::UpperHex for PhysAddr {
     }
 }
 
-/// A 64-bit virtual memory address.
-/// On x86_64, virtual addresses must be canonical. Bits 48-63 must be copies
-/// of bit 47 (sign-extension). On aarch64 with 4 level paging (`T0SZ`/`T1SZ` = 16)
-/// bits 48-63 must all be 0 (TTBR0) or all 1 (TTBR1).
+/// A 64-bit canonical virtual memory address.
 ///
-/// This type enforces canonicality on construction.
+/// On x86_64, bits 48-63 must be copies of bit 47 (sign-extension).
+/// On aarch64 with 4-level paging (`T0SZ`/`T1SZ` = 16), bits 48-63 must
+/// be all-zero (TTBR0, user) or all-one (TTBR1, kernel).
+///
+/// Canonicality is enforced on constructon. [`new`](Self::new) returns
+/// `None` for non-canonical addresses, and [`new_canonical`](Self::new_canonical)
+/// sign-extends the input automatically.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct VirtAddr(usize);
@@ -216,6 +221,10 @@ impl VirtAddr {
     }
 
     /// Returns `true` if the address is aligned to `align` bytes.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `align` is not a power of two.
     #[inline]
     pub const fn is_aligned(self, align: usize) -> bool {
         assert!(align.is_power_of_two());
@@ -223,6 +232,10 @@ impl VirtAddr {
     }
 
     /// Aligns the address **down** to the nearest multiple of `align`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `align` is not a power of two.
     #[inline]
     pub const fn align_down(self, align: usize) -> Self {
         assert!(align.is_power_of_two());
@@ -231,7 +244,9 @@ impl VirtAddr {
 
     /// Aligns the address **up** to the nearest multiple of `align`.
     ///
-    /// Returns `None` on overflow.
+    /// # Panics
+    ///
+    /// Panics if `align` is not a power of two.
     #[inline]
     pub const fn align_up(self, align: usize) -> Option<Self> {
         assert!(align.is_power_of_two());
@@ -243,12 +258,22 @@ impl VirtAddr {
     }
 
     /// Returns the address as a raw const pointer.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure this address is valid and mapped in the
+    /// current address space.
     #[inline]
     pub const fn as_ptr<T>(self) -> *const T {
         self.0 as *const T
     }
 
     /// Returns the address as a raw mutable pointer.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure this address is valid, mapped and writable
+    /// in the current address space.
     #[inline]
     pub const fn as_mut_ptr<T>(self) -> *mut T {
         self.0 as *mut T

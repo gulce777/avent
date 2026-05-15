@@ -28,27 +28,17 @@ pub fn init(hhdm_offset: usize) {
 
     #[cfg(target_arch = "x86_64")]
     {
-        // honestly x86 is actually such a vibe for this. serial ports use port I/O
-        // so it completely ignores all the MMU/paging
         let _ = hhdm_offset;
 
-        // SAFETY: early boot
+        // SAFETY: 0x2F8 is the standard COM2 base port address.
+        // Called once in early boot before any concurrent access.
         let uart = unsafe { UartImpl::new(0x2F8) };
         *SERIAL.lock() = Some(uart);
     }
 
     #[cfg(target_arch = "aarch64")]
     {
-        // TODO(aarch64): bestie. arm is actually testing my sanity.
-        // literally everything is memory mapped. limine is cute for turning on the MMU
-        // but it COMPLETELY ignores device memory. so our serial port at 0x0900_0000
-        // is just unmapped.
-        //
-        // if i try to write to it rn, the cpu throws a massive data abort and instantly
-        // bricks the OS.
-        //
-        // so yeah, no logs for arm yet. i'm literally just trying to print "hi"
-        // but now i have to code an entire VMM from scratch to map this one address.
+        // TODO: aarch64 serial output is not yet implemented.
 
         let _ = hhdm_offset;
     }

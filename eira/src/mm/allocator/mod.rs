@@ -1,7 +1,7 @@
 //! Physical frame allocator interface and implementations.
 //!
 //! Code that needs to allocate frames depends only on the [`FrameAllocator`]
-//! trait. Not on any concrete implementation!
+//! trait. Not on any concrete implementation.
 
 pub mod bitmap;
 
@@ -11,19 +11,8 @@ use crate::mm::addr::PAGE_SIZE;
 /// A physical memory frame allocator.
 ///
 /// Implementors hand out and reclaim [`PhysFrame`]s at page granularity.
-/// The trait is intentionally minimal, higher-level alloctors (slab, buddy, etc.)
+/// The trait is intentionally minimal, higher-level allocators (slab, buddy, etc.)
 /// are built on TOP of this, not INSIDE it.
-///
-/// # Safety
-///
-/// Implementations must uphold the following invariants:
-///
-/// - [`allocate`](FrameAllocator::allocate) must return a frame that is not currently
-///   allocated by any other call.
-/// - [`deallocate`](FrameAllocator::deallocate) must only be called with a
-///   frame that previously returned by [`allocate`](FrameAllocator::allocate)
-///   and has not yet ben deallocated.
-/// - Violating either invariant is **undefined behaviour** (physical aliasing).
 pub trait FrameAllocator {
     /// Allocate a single 4 KiB physical frame.
     ///
@@ -42,11 +31,9 @@ pub trait FrameAllocator {
 
     /// Allocate `count` contiguous frames.
     ///
-    /// The default implementation falls back to `count` individual calls and
-    /// is therefore **not** guaranteed to return contiguous frames. Allocators
-    /// that can provide contiguous allocations should override this method.
-    ///
-    /// Returns `None` if the request cannot be satisfied.
+    /// The default implementation only satisfies `count == 1` and returns
+    /// `None` for anything larger. Allocators that can provide genuinely
+    /// contiguous frames should override this method.
     fn allocate_contiguous(&mut self, count: usize) -> Option<OwnedFrame> {
         if count == 1 { self.allocate() } else { None }
     }

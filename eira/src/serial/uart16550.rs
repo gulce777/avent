@@ -1,11 +1,12 @@
 //! UART 16550 driver for x86_64.
 //!
-//! Drives the 16550 UART via x86 port-mapped I/O.
-//! Targets COM1 by default, which is the port QEMU
-//! exposes when `-serial stdio` is passed.
+//! Drives the 16550 UART via x86 port-mapped I/O. Register accesses use
+//! `in`/`out` instructions.
 
 use core::fmt;
 
+/// Line status register bit 5 - Transmit holding register empty.
+/// When set, the UART is ready to accept a new byte for transmission.
 const LSR_THRE: u8 = 1 << 5;
 
 /// UART 16550 driver.
@@ -17,25 +18,23 @@ pub struct Uart16550 {
 }
 
 impl Uart16550 {
-    /// Create and start a new UART instance.
+    /// Initialise and return a new UART instance at `base`.
     ///
-    /// You need to provide a base port, this function also
-    /// sets up the hardware so it is ready to print.
+    /// Configures the hardware and leaves it ready to transmit.
     pub unsafe fn new(base: u16) -> Self {
         let uart = Self { base };
         unsafe { uart.init() };
         uart
     }
 
-    /// Set up the UART hardware.
+    /// Configure the UART hardware.
     ///
-    /// It sets the speed to 115200 baud, format to 8 data bits,
-    /// and 1 stop bits (8N1). Interrupts are turned off because we only
-    /// wait and write.
+    /// Sets the baud rate to 115200 (divisor 1), format to 8N1, disables
+    /// interrupts and resets the FIFOs. Called once by [`new`](Self::new).
     ///
     /// # Safety
     ///
-    /// You must make sure no other code is trying to use the same UART port at the same time.
+    /// No other code may access the same UART port concurrently.
     unsafe fn init(&self) {
         unsafe {
             // Disable all interrupts.
@@ -44,7 +43,7 @@ impl Uart16550 {
             // Enable DLAB to set baud rate divisor.
             self.write_reg(3, 0x80);
 
-            // Divisor to 1 (115250 baud)
+            // Divisor to 1 (115200 baud)
             self.write_reg(0, 0x01); // LSB
             self.write_reg(1, 0x00); // MSB
 
@@ -57,7 +56,7 @@ impl Uart16550 {
         }
     }
 
-    /// Wait until the hardware is ready, then send one byte.
+    /// Block until the transmit holding register is empty, then send `byte`.
     fn write_byte(&self, byte: u8) {
         // Spin until the transmit holding register is empty.
         // SAFETY: reading the LSR is always safe.

@@ -4,9 +4,9 @@
 //!
 //! Two data structures work in tandem:
 //!
-//! - **Bitmap:** one bit per frame. `0 = free, `1` = allocated. Provides O(1) `is_free`
+//! - Bitmap: one bit per frame. `0 = free, `1` = allocated. Provides O(1) `is_free`
 //!   queries and O(1) mark/unmark operations.
-//! - **Free list:** a singly-linked list threaded through the free frames themselves (the first 8 bytes
+//! - Free list: a singly-linked list threaded through the free frames themselves (the first 8 bytes
 //!   of each free frame store the next pointer). Provides O(1) allocation and deallocations with zero additional
 //!   memory overhead.
 //!
@@ -61,6 +61,8 @@ pub struct BitmapAllocator {
     free: usize,
 }
 
+// SAFETY: `BitmapAllocator` is only accessed through `&mut self` methods.
+// The kernel wraps it in a `spin::Mutex`.
 unsafe impl Send for BitmapAllocator {}
 
 impl BitmapAllocator {
@@ -119,6 +121,10 @@ impl BitmapAllocator {
             None => return, // overflow, skip
         };
         let end_frame = PhysFrame::containing(end_addr);
+
+        if start_frame >= end_frame {
+            return;
+        }
 
         let mut frame = start_frame;
         while frame < end_frame {
@@ -250,8 +256,6 @@ impl BitmapAllocator {
     }
 }
 
-// SAFETY: The invariants documented on the trait are maintained by the
-// bitmap (prevents double-free detection) and the free list (O(1) operations).
 impl FrameAllocator for BitmapAllocator {
     #[inline]
     fn allocate(&mut self) -> Option<OwnedFrame> {
