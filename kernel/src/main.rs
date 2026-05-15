@@ -75,6 +75,8 @@ pub extern "C" fn kmain() -> ! {
         }
     }
 
+    panic!("test");
+
     #[cfg(target_arch = "aarch64")]
     // SAFETY: `dsb sy` is a memory barrier with no side effects beyond ordering.
     unsafe {
@@ -118,8 +120,28 @@ unsafe fn draw_rect(
     }
 }
 
+#[cold]
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    println!("\n\x1B[1;31marc fault.\x1B[0m\n");
+
+    let reason = info.message();
+
+    let (file, line) = if let Some(location) = info.location() {
+        (location.file(), location.line())
+    } else {
+        ("unknown", 0)
+    };
+
+    println!("\x1B[90mreason     |\x1B[0m \x1B[1m {}\x1B[0m", reason);
+    println!(
+        "\x1B[90mlocation   |\x1B[0m \x1B[1m {}:{}\x1B[0m",
+        file, line
+    );
+    println!("\x1B[90mstatus     |\x1B[0m \x1B[1m core halted\x1B[0m\n");
+
+    println!("\x1B[90mplease reset the machine.\x1B[0m");
+
     loop {
         arch::halt();
     }
