@@ -10,7 +10,7 @@ use core::marker::PhantomData;
 
 use crate::mm::FrameAllocator;
 
-use super::addr::{PAGE_SIZE, PhysAddr};
+use super::addr::{HUGE_PAGE_SIZE, LARGE_PAGE_SIZE, PAGE_SIZE, PhysAddr};
 
 /// A page-aligned physical memory frame of size `S` bytes.
 ///
@@ -29,9 +29,9 @@ pub struct PhysFrame<const S: usize = PAGE_SIZE> {
 /// A standard 4 KiB physical frame.
 pub type Frame4K = PhysFrame<{ PAGE_SIZE }>;
 /// A 2 MiB large physical frame.
-pub type Frame2M = PhysFrame<{ 2 * 1024 * 1024 }>;
+pub type Frame2M = PhysFrame<{ LARGE_PAGE_SIZE }>;
 /// A 1 GiB huge physical frame.
-pub type Frame1G = PhysFrame<{ 1024 * 1024 * 1024 }>;
+pub type Frame1G = PhysFrame<{ HUGE_PAGE_SIZE }>;
 
 impl<const S: usize> PhysFrame<S> {
     pub const SIZE: usize = S;

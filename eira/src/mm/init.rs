@@ -8,6 +8,7 @@
 //! any memory to the allocator.
 
 use super::addr::{PAGE_SIZE, PhysAddr};
+use super::allocator::FrameAllocator;
 use super::allocator::bitmap::BitmapAllocator;
 use super::frame::OwnedFrame;
 use limine::memmap::MEMMAP_USABLE;

@@ -25,11 +25,10 @@
 //!   must be genuinely free (not used by the kernel image, Limine structures,
 //!   or the bitmap itself).
 
-use core::ptr::NonNull;
-
 use super::FrameAllocator;
 use crate::mm::addr::{PAGE_SIZE, PhysAddr};
 use crate::mm::frame::{OwnedFrame, PhysFrame};
+use core::ptr::NonNull;
 
 /// A node in the intrusive free list.
 ///
