@@ -2,8 +2,9 @@
 #![no_main]
 
 mod arch;
+mod serial;
 
-use limine::request::{FramebufferRequest, StackSizeRequest};
+use limine::request::{FramebufferRequest, HhdmRequest, StackSizeRequest};
 use limine::{BaseRevision, RequestsEndMarker, RequestsStartMarker};
 
 #[used]
@@ -23,6 +24,10 @@ static FRAMEBUFFER_REQUEST: FramebufferRequest = FramebufferRequest::new();
 static STACK_SIZE_REQUEST: StackSizeRequest = StackSizeRequest::new(0x10000);
 
 #[used]
+#[unsafe(link_section = ".requests")]
+static HHDM_REQUEST: HhdmRequest = HhdmRequest::new();
+
+#[used]
 #[unsafe(link_section = ".requests_end")]
 static _REQUESTS_END: RequestsEndMarker = RequestsEndMarker::new();
 
@@ -33,6 +38,20 @@ static _REQUESTS_END: RequestsEndMarker = RequestsEndMarker::new();
 /// Must only be called ONCE, from the assembly stub, on the boot CPU.
 #[unsafe(no_mangle)]
 pub extern "C" fn kmain() -> ! {
+    let hhdm_offset = HHDM_REQUEST
+        .response()
+        .expect("Limine did not provide HHDM offset")
+        .offset as usize;
+
+    serial::init(hhdm_offset);
+
+    print!("\x1B[2J\x1B[H");
+    println!("[arc] kernel starting");
+    println!(
+        "[arc] base revision supported: {}",
+        BASE_REVISION.is_supported()
+    );
+
     // If the bootloader set the revision field to 0, the requested revision is
     // supported. Any other value means an incompatible bootloader.
     assert!(

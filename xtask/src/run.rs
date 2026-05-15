@@ -31,6 +31,7 @@ pub fn run_qemu(arch: &Arch, uefi: bool) -> Result<()> {
         Arch::X86_64 => {
             cmd.args(["-M", "q35", "-m", "256M"]);
             cmd.args(["-cdrom", iso_path.to_str().unwrap()]);
+            cmd.args(["-serial", "file:uefi_boot.log"]);
             cmd.args(["-serial", "stdio"]);
 
             if uefi {
@@ -75,6 +76,7 @@ pub fn run_qemu(arch: &Arch, uefi: bool) -> Result<()> {
                 "-drive",
                 &format!("if=pflash,format=raw,readonly=on,file={}", code.display()),
             ]);
+            cmd.args(["-s", "-S"]);
             if vars.exists() {
                 cmd.args([
                     "-drive",

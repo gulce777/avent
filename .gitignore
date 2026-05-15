@@ -2,3 +2,4 @@
 /build
 /iso_root
 .DS_Store
+*.log

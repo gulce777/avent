@@ -39,12 +39,9 @@ pub fn build_kernel(arch: &Arch, release: bool) -> Result<()> {
         .arg("--target")
         .arg(&target_json)
         .args([
-            "-Z",
-            "build-std=core,compiler_builtins",
-            "-Z",
-            "build-std-features=compiler-builtins-mem",
-            "-Z",
-            "json-target-spec",
+            "-Zbuild-std=core,compiler_builtins",
+            "-Zbuild-std-features=compiler-builtins-mem",
+            "-Zjson-target-spec",
         ]);
 
     if release {

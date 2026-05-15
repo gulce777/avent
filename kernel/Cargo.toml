@@ -10,3 +10,4 @@ harness = false
 
 [dependencies]
 limine = "0.6.3"
+spin = "0.11.0"
