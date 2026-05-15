@@ -73,11 +73,12 @@ impl<const S: usize> PhysFrame<S> {
     }
 
     /// Returns the exclusive end address of this frame (`base + S`).
+    ///
+    /// Returns `None` if `base` is `PhysAddr::MAX - S + 1` or higher,
+    /// which would overflow the 52-bit address space.
     #[inline]
-    pub const fn end(self) -> PhysAddr {
-        // SAFETY: base + S cannot overflow base <= PhysAddr::MAX - S because
-        // we only ever construct frames within the 52-bit space.
-        unsafe { PhysAddr::new_unchecked(self.base.as_usize() + S) }
+    pub const fn end(self) -> Option<PhysAddr> {
+        self.base.checked_add(S)
     }
 
     /// Returns the frame index of this frame.
