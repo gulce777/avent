@@ -30,6 +30,8 @@ use crate::mm::addr::{PAGE_SIZE, PhysAddr};
 use crate::mm::frame::{OwnedFrame, PhysFrame};
 use core::ptr::NonNull;
 
+const FREE_LIST_EMPTY: usize = usize::MAX;
+
 /// A node in the intrusive free list.
 ///
 /// Written into the first 8 bytes of each free frame. The `next` field holds
@@ -91,7 +93,7 @@ impl BitmapAllocator {
 
         Self {
             bitmap: NonNull::from(bitmap),
-            free_list_head: 0,
+            free_list_head: FREE_LIST_EMPTY,
             hhdm_offset,
             total,
             free: 0,
@@ -230,7 +232,7 @@ impl BitmapAllocator {
     ///
     /// Returns `None` if the free list is empty.
     fn pop_free(&mut self) -> Option<OwnedFrame> {
-        if self.free_list_head == 0 {
+        if self.free_list_head == FREE_LIST_EMPTY {
             return None;
         }
 
