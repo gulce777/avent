@@ -155,7 +155,7 @@ fn run_cli() -> Result<()> {
 }
 
 fn main() {
-    let result = match run_cli() {
+    match run_cli() {
         Ok(_) => {
             println!();
         }

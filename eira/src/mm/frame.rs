@@ -5,12 +5,10 @@
 //! the type system distinguishes 4 KiB frames from 2 MiB large frames and
 //! 1 GiB huge frames. Mixing them is a compile-time error.
 
+use super::addr::{HUGE_PAGE_SIZE, LARGE_PAGE_SIZE, PAGE_SIZE, PhysAddr};
+use crate::mm::FrameAllocator;
 use core::fmt;
 use core::marker::PhantomData;
-
-use crate::mm::FrameAllocator;
-
-use super::addr::{HUGE_PAGE_SIZE, LARGE_PAGE_SIZE, PAGE_SIZE, PhysAddr};
 
 /// A page-aligned physical memory frame of size `S` bytes.
 ///

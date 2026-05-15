@@ -1,26 +1,10 @@
 //! x86_64 platform implementation.
 
-mod entry;
-
-/// Halt the current CPU core.
-///
-/// Executes `hlt`, pauses the core until the next interrupt fires.
-/// Always call this inside a loop.
-#[inline]
-pub fn halt() {
-    // SAFETY: `hlt` is always safe to execute in ring 0.
-    unsafe { core::arch::asm!("hlt", options(nomem, nostack, preserves_flags)) };
+mod entry {
+    core::arch::global_asm!(include_str!("entry.s"));
 }
 
-/// Disable interrupts on the current core.
-///
-/// After this returns, no external interrupts will be delivered until
-/// [`enable_interrupts`] is called or the core is reset.
-#[inline]
-pub fn disable_interrupts() {
-    // SAFETY: `cli` is valid in ring 0 and has no memory side effects
-    unsafe { core::arch::asm!("cli", options(nomem, nostack)) };
-}
+pub mod imp;
 
 /// Enable the x87 FPU and SSE instruction sets.
 ///

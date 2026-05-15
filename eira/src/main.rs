@@ -6,6 +6,7 @@ mod logger;
 mod mm;
 mod serial;
 
+use crate::arch::{Arch, Platform};
 use limine::request::{FramebufferRequest, HhdmRequest, MemmapRequest, StackSizeRequest};
 use limine::{BaseRevision, RequestsEndMarker, RequestsStartMarker};
 
@@ -91,7 +92,7 @@ pub extern "C" fn kmain() -> ! {
 
     log::info!("halting");
     loop {
-        arch::halt();
+        Platform::halt();
     }
 }
 
@@ -130,7 +131,7 @@ unsafe fn draw_rect(
 #[cold]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    arch::disable_interrupts();
+    Platform::disable_interrupts();
 
     println!("\n\x1B[1;31meira fault.\x1B[0m\n");
 
@@ -152,7 +153,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     println!("\x1B[90mplease reset the machine.\x1B[0m");
 
     loop {
-        arch::halt();
+        Platform::halt();
     }
 }
 
