@@ -64,8 +64,7 @@ pub extern "C" fn kmain() -> ! {
     if BASE_REVISION.is_supported() {
         log::debug!("limine base revision supported");
     } else {
-        log::error!("limine base revision is not supported!");
-        panic!("incompatible bootloader");
+        panic!("incompatible bootloader: limine base revision is not supported");
     }
 
     if let Some(response) = FRAMEBUFFER_REQUEST.response() {
@@ -159,6 +158,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 
 pub fn run_allocator_tests() {
     log::info!("starting physical memory tests...");
+
     let frame1 = mm::allocate();
     assert_eq!(
         frame1.base().as_usize() % 4096,
@@ -177,7 +177,7 @@ pub fn run_allocator_tests() {
         "free frame count did not decrease correctly after allocation!"
     );
 
-    unsafe { mm::deallocate(frame2) };
+    mm::deallocate(frame2);
     let after_dealloc_free = mm::free_frames();
 
     assert_eq!(
@@ -190,43 +190,44 @@ pub fn run_allocator_tests() {
     let f_b = mm::allocate();
     let f_c = mm::allocate();
 
-    unsafe {
-        mm::deallocate(f_a);
-        mm::deallocate(f_b);
-        mm::deallocate(f_c);
-    }
+    let base_a = f_a.base();
+    let base_b = f_b.base();
+    let base_c = f_c.base();
+
+    mm::deallocate(f_a);
+    mm::deallocate(f_b);
+    mm::deallocate(f_c);
 
     let f_c_again = mm::allocate();
     let f_b_again = mm::allocate();
     let f_a_again = mm::allocate();
 
     assert_eq!(
-        f_c.base(),
         f_c_again.base(),
+        base_c,
         "lifo order is broken, expected f_c."
     );
     assert_eq!(
-        f_b.base(),
         f_b_again.base(),
+        base_b,
         "lifo order is broken, expected f_b."
     );
     assert_eq!(
-        f_a.base(),
         f_a_again.base(),
+        base_a,
         "lifo order is broken, expected f_a."
     );
 
-    unsafe {
-        mm::deallocate(f_c_again);
-        mm::deallocate(f_b_again);
-        mm::deallocate(f_a_again);
-        mm::deallocate(frame1); // Test 1'den kalanı da temizle
-    }
+    mm::deallocate(f_c_again);
+    mm::deallocate(f_b_again);
+    mm::deallocate(f_a_again);
+    mm::deallocate(frame1);
+
     log::info!("test 3 passed: lifo chain is correct.");
 
     // NOTE: double free test
-    // this code is intentionally commented out because running it should trigger a kernel panic.
-
+    // calling mm:deallocate twice on the same OwnedFrame is a compile-time
+    // error now! yay!! this panic is no longer EXPRESSIBLE! THANKS RUST!
     /*let danger_frame = mm::allocate();
     unsafe {
         mm::deallocate(danger_frame);

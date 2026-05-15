@@ -8,6 +8,8 @@
 use core::fmt;
 use core::marker::PhantomData;
 
+use crate::mm::FrameAllocator;
+
 use super::addr::{PAGE_SIZE, PhysAddr};
 
 /// A page-aligned physical memory frame of size `S` bytes.
@@ -115,6 +117,34 @@ impl<const S: usize> fmt::Debug for PhysFrame<S> {
             S / 1024,
             self.base.as_usize()
         )
+    }
+}
+
+#[derive(Debug)]
+pub struct OwnedFrame {
+    inner: PhysFrame,
+}
+
+impl OwnedFrame {
+    pub(crate) fn new(frame: PhysFrame) -> Self {
+        Self { inner: frame }
+    }
+
+    #[inline]
+    pub fn base(&self) -> PhysAddr {
+        self.inner.base()
+    }
+
+    pub fn free(self, allocator: &mut impl FrameAllocator) {
+        let this = core::mem::ManuallyDrop::new(self);
+
+        unsafe { allocator.deallocate(this.inner) };
+    }
+}
+
+impl Drop for OwnedFrame {
+    fn drop(&mut self) {
+        panic!("owned frame dropped without being freed. {:?}", self.inner);
     }
 }
 

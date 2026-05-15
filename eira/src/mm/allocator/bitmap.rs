@@ -29,7 +29,7 @@ use core::ptr::NonNull;
 
 use super::FrameAllocator;
 use crate::mm::addr::{PAGE_SIZE, PhysAddr};
-use crate::mm::frame::PhysFrame;
+use crate::mm::frame::{OwnedFrame, PhysFrame};
 
 /// A node in the intrusive free list.
 ///
@@ -61,11 +61,21 @@ pub struct BitmapAllocator {
     free: usize,
 }
 
-// SAFETY: The allocator is protected by a `spin::Mutex` at the call site,
-// the underlying memory is only accessed through the allocator's methods.
 unsafe impl Send for BitmapAllocator {}
 
 impl BitmapAllocator {
+    /// Create a new bitmap allocator.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `bitmap` is too small to track all frames up to `max_phys_addr`.
+    ///
+    /// # Safety
+    ///
+    /// - `bitmap` must be zeroed before this call.
+    /// - `bitmap` must have `'static` lifetime. It must remain valid for the
+    ///   entire lifetime of the allocator.
+    /// - `hhdm_offset` must be the correct HHDM base for the current boot.
     pub unsafe fn new(bitmap: &'static mut [u8], hhdm_offset: usize, max_phys_addr: usize) -> Self {
         let total = (max_phys_addr + PAGE_SIZE - 1) / PAGE_SIZE;
 
@@ -149,11 +159,11 @@ impl BitmapAllocator {
         let idx = frame.index();
         let byte = idx / 8;
         let bit = idx % 8;
-        // SAFETY: bitmap lives for 'static; no concurrent mutation.
+        // SAFETY: bitmap lives for 'static. no concurrent mutation.
         let bitmap = unsafe { self.bitmap() };
         if byte >= bitmap.len() {
             return true;
-        } // out of range → treat as allocated
+        }
         bitmap[byte] & (1 << bit) != 0
     }
 
@@ -214,7 +224,7 @@ impl BitmapAllocator {
     /// Pop the first frame off the free list and mark it allocated.
     ///
     /// Returns `None` if the free list is empty.
-    fn pop_free(&mut self) -> Option<PhysFrame> {
+    fn pop_free(&mut self) -> Option<OwnedFrame> {
         if self.free_list_head == 0 {
             return None;
         }
@@ -236,21 +246,26 @@ impl BitmapAllocator {
         self.mark_allocated(frame);
         self.free -= 1;
 
-        Some(frame)
+        Some(OwnedFrame::new(frame))
     }
 }
 
 // SAFETY: The invariants documented on the trait are maintained by the
 // bitmap (prevents double-free detection) and the free list (O(1) operations).
-unsafe impl FrameAllocator for BitmapAllocator {
+impl FrameAllocator for BitmapAllocator {
     #[inline]
-    fn allocate(&mut self) -> Option<PhysFrame> {
+    fn allocate(&mut self) -> Option<OwnedFrame> {
         self.pop_free()
     }
 
+    /// # Safety
+    ///
+    /// `frame` must have been returned by a prior call to [`allocate`](Self::allocate)
+    /// on this allocator instance and must not have been deallocated since.
+    /// Prefer [`OwnedFrame::free`] over calling this directly.
     #[inline]
     unsafe fn deallocate(&mut self, frame: PhysFrame) {
-        debug_assert!(
+        assert!(
             self.is_allocated(frame),
             "deallocate called on a frame that is not allocated: {frame:?}",
         );

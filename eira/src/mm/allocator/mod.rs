@@ -5,7 +5,7 @@
 
 pub mod bitmap;
 
-use super::frame::PhysFrame;
+use super::frame::{OwnedFrame, PhysFrame};
 use crate::mm::addr::PAGE_SIZE;
 
 /// A physical memory frame allocator.
@@ -24,11 +24,11 @@ use crate::mm::addr::PAGE_SIZE;
 ///   frame that previously returned by [`allocate`](FrameAllocator::allocate)
 ///   and has not yet ben deallocated.
 /// - Violating either invariant is **undefined behaviour** (physical aliasing).
-pub unsafe trait FrameAllocator {
+pub trait FrameAllocator {
     /// Allocate a single 4 KiB physical frame.
     ///
     /// Returns `None` if physical memory is exhausted.
-    fn allocate(&mut self) -> Option<PhysFrame<{ PAGE_SIZE }>>;
+    fn allocate(&mut self) -> Option<OwnedFrame>;
 
     /// Return a previously allocated frame to the allocator.
     ///
@@ -36,7 +36,8 @@ pub unsafe trait FrameAllocator {
     ///
     /// `frame` must have been returned by a prior call to
     /// [`allocate`](Self::allocate) on this allocator instance, and must not
-    /// have been deallocated since.
+    /// have been deallocated since. Prefer [`OwnedFrame::free`] over calling this
+    /// directly.
     unsafe fn deallocate(&mut self, frame: PhysFrame<{ PAGE_SIZE }>);
 
     /// Allocate `count` contiguous frames.
@@ -46,7 +47,7 @@ pub unsafe trait FrameAllocator {
     /// that can provide contiguous allocations should override this method.
     ///
     /// Returns `None` if the request cannot be satisfied.
-    fn allocate_contiguous(&mut self, count: usize) -> Option<PhysFrame<{ PAGE_SIZE }>> {
+    fn allocate_contiguous(&mut self, count: usize) -> Option<OwnedFrame> {
         if count == 1 { self.allocate() } else { None }
     }
 

@@ -15,7 +15,7 @@ use spin::Mutex;
 use super::addr::{PAGE_SIZE, PhysAddr};
 use super::allocator::FrameAllocator;
 use super::allocator::bitmap::BitmapAllocator;
-use super::frame::PhysFrame;
+use super::frame::{OwnedFrame, PhysFrame};
 
 /// The kernel-global physical frame allocator.
 pub static FRAME_ALLOCATOR: Mutex<Option<BitmapAllocator>> = Mutex::new(None);
@@ -37,6 +37,11 @@ pub static FRAME_ALLOCATOR: Mutex<Option<BitmapAllocator>> = Mutex::new(None);
 /// - No other code may access physical memory outside the kernel image until
 ///   this function returns.
 pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespData>) {
+    {
+        let guard = FRAME_ALLOCATOR.lock();
+        assert!(guard.is_none(), "mm::init::init() called more than once");
+    }
+
     let hhdm_offset = hhdm.offset as usize;
 
     let max_phys = memmap
@@ -60,7 +65,6 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
         bitmap_pages,
     );
 
-    // ── Step 2: carve the bitmap out of the first suitable usable region ───────
     let bitmap_phys = memmap
         .entries()
         .iter()
@@ -129,7 +133,16 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
     *FRAME_ALLOCATOR.lock() = Some(allocator);
 }
 
-pub fn allocate() -> PhysFrame {
+/// Allocate a single physical frame.
+///
+/// Returns an [`OwnedFrame`] that must be explicitly freed via
+/// [`OwnedFrame::free`]. Dropping it without freeing will panic.
+///
+/// # Panics
+///
+/// - [`init`] has not been called yet.
+/// - Physical memory is exhausted.
+pub fn allocate() -> OwnedFrame {
     FRAME_ALLOCATOR
         .lock()
         .as_mut()
@@ -138,17 +151,27 @@ pub fn allocate() -> PhysFrame {
         .expect("out of physical memory")
 }
 
-pub unsafe fn deallocate(frame: PhysFrame) {
-    // SAFETY: caller upholds the frame allocator invariants.
-    unsafe {
-        FRAME_ALLOCATOR
-            .lock()
-            .as_mut()
-            .expect("frame allocator not initialised")
-            .deallocate(frame);
-    }
+/// Return a previously allocated frame to the allocator.
+///
+/// Prefer calling [`OwnedFrame::free`] directly; this function exists for
+/// call sites that already hold a lock on the allocator and need to avoid
+/// a secund acquisition.
+///
+/// # Panics
+///
+/// [`init`] has not been called yet.
+pub fn deallocate(frame: OwnedFrame) {
+    let mut guard = FRAME_ALLOCATOR.lock();
+    let allocator = guard.as_mut().expect("frame allocator not initialised");
+
+    frame.free(allocator);
 }
 
+/// Returns the number of free physical frames.
+///
+/// # Panics
+///
+/// [`init`] has not been called yet.
 pub fn free_frames() -> usize {
     FRAME_ALLOCATOR
         .lock()
@@ -157,6 +180,11 @@ pub fn free_frames() -> usize {
         .free_frames()
 }
 
+/// Returns the total number of physical frames tracked by the allocator.
+///
+/// # Panics
+///
+/// [`init`] has not been called yet.
 pub fn total_frames() -> usize {
     FRAME_ALLOCATOR
         .lock()
