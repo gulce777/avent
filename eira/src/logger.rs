@@ -26,14 +26,13 @@ impl log::Log for EiraLogger {
             let reset_color = "\x1B[0m";
 
             crate::println!(
-                "{}[{}{:<5}{}] {} | {}{}",
-                dim_color,
-                color_code,
+                "{dim}[{color}{:<5}{dim}] {target} | {reset}{args}",
                 record.level(),
-                dim_color,
-                record.target(),
-                reset_color,
-                record.args()
+                dim = dim_color,
+                color = color_code,
+                reset = reset_color,
+                target = record.target(),
+                args = record.args(),
             );
         }
     }
@@ -44,9 +43,7 @@ impl log::Log for EiraLogger {
 static LOGGER: EiraLogger = EiraLogger;
 
 pub fn init() {
-    unsafe {
-        let _ = log::set_logger(&LOGGER);
+    log::set_logger(&LOGGER);
 
-        log::set_max_level(LevelFilter::Trace);
-    }
+    log::set_max_level(LevelFilter::Trace);
 }
