@@ -110,10 +110,10 @@ pub fn build_dir() -> PathBuf {
     workspace_root().join("build")
 }
 
-fn main() -> Result<()> {
+fn run_cli() -> Result<()> {
     let cli = Cli::parse();
 
-    let result = match cli.command {
+    match cli.command {
         Command::Fetch => {
             log_section!("FETCH");
             fetch::fetch_limine().and_then(|_| fetch::fetch_ovmf())
@@ -151,15 +151,19 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
-    };
+    }
+}
 
-    match &result {
-        Ok(_) => println!(),
+fn main() {
+    let cli = Cli::parse();
+
+    let result = match run_cli() {
+        Ok(_) => {
+            println!();
+        }
         Err(e) => {
             log_err!("{e:#}");
             std::process::exit(1);
         }
-    }
-
-    result
+    };
 }
