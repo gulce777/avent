@@ -18,6 +18,12 @@ SECTIONS {
 
     .rodata : { *(.rodata .rodata.*) } :rodata
 
+    .test_cases : {
+        __test_cases_start = .;
+        KEEP(*(.test_cases))
+        __test_cases_end = .;
+    } : rodata
+
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     .data : {

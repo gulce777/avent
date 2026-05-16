@@ -52,6 +52,17 @@ enum Command {
         bios: bool,
     },
 
+    /// Run kernel tests in QEMU and report pass/fail
+    Test {
+        #[arg(long, default_value = "x86_64")]
+        arch: Arch,
+        #[arg(long)]
+        release: bool,
+        /// Boot in BIOS mode (x86_64 only; default: UEFI)
+        #[arg(long)]
+        bios: bool,
+    },
+
     /// Remove the build/ directory
     Clean,
 }
@@ -139,6 +150,18 @@ fn run_cli() -> Result<()> {
             iso::create_iso(&arch, release)?;
             log_section!("RUN");
             run::run_qemu(&arch, !bios)
+        }
+        Command::Test {
+            arch,
+            release,
+            bios,
+        } => {
+            log_section!("BUILD");
+            build::build_kernel_with_tests(&arch, release)?;
+            log_section!("ISO");
+            iso::create_iso(&arch, release)?;
+            log_section!("TEST");
+            run::run_qemu_tests(&arch, !bios)
         }
         Command::Clean => {
             log_section!("CLEAN");

@@ -5,6 +5,8 @@ mod arch;
 mod logger;
 mod mm;
 mod serial;
+#[cfg(feature = "kernel-tests")]
+mod test;
 
 use crate::arch::{Arch, Platform};
 use limine::request::{FramebufferRequest, HhdmRequest, MemmapRequest, StackSizeRequest};
@@ -62,7 +64,8 @@ pub extern "C" fn kmain() -> ! {
 
     unsafe { mm::init::init(memmap, hhdm) };
 
-    run_allocator_tests();
+    #[cfg(feature = "kernel-tests")]
+    crate::test::runner::run_all();
 
     if BASE_REVISION.is_supported() {
         log::debug!("limine base revision supported");

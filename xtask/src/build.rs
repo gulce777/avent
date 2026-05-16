@@ -4,6 +4,14 @@ use std::path::PathBuf;
 use std::process::Command;
 
 pub fn build_kernel(arch: &Arch, release: bool) -> Result<()> {
+    build_kernel_inner(arch, release, false)
+}
+
+pub fn build_kernel_with_tests(arch: &Arch, release: bool) -> Result<()> {
+    build_kernel_inner(arch, release, true)
+}
+
+pub fn build_kernel_inner(arch: &Arch, release: bool, tests: bool) -> Result<()> {
     let root = workspace_root();
     let target_json = root.join("targets").join(arch.target_json());
     let linker_script = root.join(arch.linker_script());
@@ -27,6 +35,8 @@ pub fn build_kernel(arch: &Arch, release: bool) -> Result<()> {
     }
 
     let profile_label = if release { "release" } else { "debug" };
+    let mode_label = if tests { "test" } else { "kernel" };
+
     log_build!(
         "Compiling arc_kernel   [arch: {}  profile: {}]",
         arch.as_str(),
@@ -43,6 +53,10 @@ pub fn build_kernel(arch: &Arch, release: bool) -> Result<()> {
             "-Zbuild-std-features=compiler-builtins-mem",
             "-Zjson-target-spec",
         ]);
+
+    if tests {
+        cmd.args(["--features", "kernel-tests"]);
+    }
 
     if release {
         cmd.arg("--release");
