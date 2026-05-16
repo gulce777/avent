@@ -23,7 +23,7 @@ pub fn run_qemu_tests(arch: &Arch, uefi: bool) -> Result<()> {
         cmd.args(["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"]);
     }
 
-    cmd.args(["-no-reboot"]);
+    cmd.args(["-no-reboot", "-display", "none"]);
 
     let status = cmd.status().context("Failed to start QEMU")?;
 
