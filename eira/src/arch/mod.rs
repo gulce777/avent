@@ -46,4 +46,10 @@ pub trait Arch {
     /// After this returns, no external interrupts will be delivered until
     /// they are explicitly re-enabled.
     fn disable_interrupts();
+
+    /// Perform one-time, per-CPU hardware initialisation.
+    ///
+    /// Called once per logical CPU during early boot, before interrupts
+    /// are enabled.
+    fn init_cpu();
 }

@@ -4,6 +4,7 @@ mod entry {
     core::arch::global_asm!(include_str!("entry.s"));
 }
 
+pub mod gdt;
 pub mod imp;
 
 /// Enable the x87 FPU and SSE instruction sets.

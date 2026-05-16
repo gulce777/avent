@@ -16,4 +16,8 @@ impl Arch for AArch64 {
         // SAFETY: msr daifset is safe to execute in kernel mode (EL1).
         unsafe { core::arch::asm!("msr daifset, #0xf", options(nomem, nostack)) };
     }
+
+    fn init_cpu() {
+        // TODO: load exception vector table.
+    }
 }

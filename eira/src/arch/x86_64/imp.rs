@@ -1,6 +1,10 @@
 //! x86_64 implementation of the [`Arch`] trait.
 
+use super::gdt::CpuTables;
 use crate::arch::Arch;
+use spin::Once;
+
+static BSP_TABLES: CpuTables = CpuTables::new();
 
 pub struct X86_64;
 
@@ -17,5 +21,9 @@ impl Arch for X86_64 {
     fn disable_interrupts() {
         // SAFETY: `cli` is valid in ring 0 and has no memory side effects.
         unsafe { core::arch::asm!("cli", options(nomem, nostack)) };
+    }
+
+    fn init_cpu() {
+        unsafe { BSP_TABLES.load() };
     }
 }

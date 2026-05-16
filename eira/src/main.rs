@@ -51,6 +51,8 @@ pub extern "C" fn kmain() -> ! {
     serial::init();
     logger::init();
 
+    Platform::init_cpu();
+
     let memmap = MEMORY_MAP_REQUEST
         .response()
         .expect("no memory map response");
