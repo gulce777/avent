@@ -49,6 +49,8 @@ pub extern "C" fn kmain() -> ! {
     arch::enable_sse();
 
     serial::init();
+    print!("\x1B[2J\x1B[H");
+
     logger::init();
 
     Platform::init_cpu();
@@ -57,8 +59,6 @@ pub extern "C" fn kmain() -> ! {
         .response()
         .expect("no memory map response");
     let hhdm = HHDM_REQUEST.response().expect("no HHDM response");
-
-    print!("\x1B[2J\x1B[H");
 
     unsafe { mm::init::init(memmap, hhdm) };
 

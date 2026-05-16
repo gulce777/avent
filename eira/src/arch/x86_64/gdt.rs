@@ -315,6 +315,17 @@ impl CpuTables {
             );
 
             core::arch::asm!(
+                "push {kcode}",
+                "lea {tmp}, [rip + 2f]",
+                "push {tmp}",
+                "retfq",
+                "2:",
+                kcode = const KCODE_SELECTOR,
+                tmp = out(reg) _,
+                options(preserves_flags),
+            );
+
+            core::arch::asm!(
                 "mov ax, {kdata}",
                 "mov ds, ax",
                 "mov es, ax",
