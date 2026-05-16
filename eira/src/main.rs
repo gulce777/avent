@@ -92,6 +92,8 @@ pub extern "C" fn kmain() -> ! {
         core::arch::asm!("dsb sy", options(nostack, nomem));
     }
 
+    unsafe { core::ptr::read_volatile(0xdead_bee8 as *const u64) };
+
     log::info!("halting");
     loop {
         Platform::halt();

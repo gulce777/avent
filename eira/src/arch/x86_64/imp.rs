@@ -1,10 +1,12 @@
 //! x86_64 implementation of the [`Arch`] trait.
 
 use super::gdt::CpuTables;
+use super::idt::Idt;
 use crate::arch::Arch;
 use spin::Once;
 
 static BSP_TABLES: CpuTables = CpuTables::new();
+static IDT: Idt = Idt::new();
 
 pub struct X86_64;
 
@@ -25,5 +27,7 @@ impl Arch for X86_64 {
 
     fn init_cpu() {
         unsafe { BSP_TABLES.load() };
+
+        unsafe { IDT.load() };
     }
 }

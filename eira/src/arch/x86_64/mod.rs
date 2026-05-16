@@ -5,6 +5,7 @@ mod entry {
 }
 
 pub mod gdt;
+pub mod idt;
 pub mod imp;
 
 /// Enable the x87 FPU and SSE instruction sets.
