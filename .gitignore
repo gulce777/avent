@@ -3,3 +3,4 @@
 /iso_root
 .DS_Store
 *.log
+/xtask/target/

@@ -357,6 +357,7 @@ impl CpuTables {
     ///
     /// Must not be called concurrently with [`load`](CpuTables::load).
     #[inline]
+    #[allow(dead_code)]
     pub unsafe fn tss(&self) -> &Tss {
         unsafe { &*self.tss.get() }
     }
@@ -367,6 +368,7 @@ impl CpuTables {
     ///
     /// Must not be called concurrently with any other accessor.
     #[inline]
+    #[allow(dead_code)]
     pub unsafe fn tss_mut(&mut self) -> &mut Tss {
         unsafe { &mut *self.tss.get() }
     }

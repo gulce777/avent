@@ -25,6 +25,7 @@ pub enum PageTableLevel {
 impl PageTableLevel {
     /// The next level towards the leaf, or `None` at the leaf itself.
     #[inline]
+    #[allow(dead_code)]
     pub const fn next(self) -> Option<Self> {
         match self {
             Self::Four => Some(Self::Three),
@@ -36,6 +37,7 @@ impl PageTableLevel {
 
     /// `true` if this is the leaf (PT) level.
     #[inline]
+    #[allow(dead_code)]
     pub const fn is_leaf(self) -> bool {
         matches!(self, Self::One)
     }
@@ -115,6 +117,7 @@ impl PageTable {
 
     /// Iterate over all entries.
     #[inline]
+    #[allow(dead_code)]
     pub fn iter(&self) -> impl Iterator<Item = &PageTableEntry> {
         self.entries.iter()
     }

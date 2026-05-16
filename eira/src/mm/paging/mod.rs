@@ -4,7 +4,7 @@
 //! backend.
 
 use crate::arch::Arch;
-use crate::mm::{Frame4K, OwnedFrame, PhysAddr, VirtAddr};
+use crate::mm::{OwnedFrame, PhysAddr, VirtAddr};
 
 #[cfg(feature = "kernel-tests")]
 pub mod tests;
@@ -33,26 +33,31 @@ impl PageFlags {
     pub const GLOBAL: Self = Self(1 << 5);
 
     /// No flags set.
+    #[allow(dead_code)]
     pub const fn empty() -> Self {
         Self(0)
     }
 
     /// Typical kernel data mapping: readable + writable, no-execute, global.
+    #[allow(dead_code)]
     pub const fn kernel_data() -> Self {
         Self(Self::READ.0 | Self::WRITE.0 | Self::GLOBAL.0)
     }
 
     /// Typical kernel code mapping: readable + executable, no-write, global.
+    #[allow(dead_code)]
     pub const fn kernel_code() -> Self {
         Self(Self::READ.0 | Self::EXECUTE.0 | Self::GLOBAL.0)
     }
 
     /// Typical user data mapping: readable + writable, no-execute.
+    #[allow(dead_code)]
     pub const fn user_data() -> Self {
         Self(Self::READ.0 | Self::WRITE.0 | Self::USER.0)
     }
 
     /// Typical user code mapping: readable + executable.
+    #[allow(dead_code)]
     pub const fn user_code() -> Self {
         Self(Self::READ.0 | Self::EXECUTE.0 | Self::USER.0)
     }
@@ -63,6 +68,7 @@ impl PageFlags {
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub const fn is_empty(self) -> bool {
         self.0 == 0
     }
@@ -73,6 +79,7 @@ impl PageFlags {
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub const fn without(self, other: Self) -> Self {
         Self(self.0 & !other.0)
     }
@@ -97,12 +104,14 @@ impl core::ops::BitOrAssign for PageFlags {
 /// consume this by calling [`flush`](TlbFlush::flush) or [`ignore`](TlbFlush::ignore).
 /// Dropping it without either will panic.
 #[must_use = "TLB flush must be explicitly flushed or ignored"]
+#[allow(dead_code)]
 pub struct TlbFlush(VirtAddr);
 
 impl TlbFlush {
     /// Construct a flush token for `addr`.
     ///
     /// Only [`Mapper`] implementations construct this type.
+    #[allow(dead_code)]
     pub(crate) fn new(addr: VirtAddr) -> Self {
         Self(addr)
     }
@@ -110,17 +119,19 @@ impl TlbFlush {
     /// This is a thin wrapper, the actual instruction is emitted by the arch
     /// backend via [`crate::arch::Platform::flush_tlb_page`].
     #[inline]
+    #[allow(dead_code)]
     pub fn flush(self) {
         let addr = self.0;
         core::mem::forget(self);
 
         // SAFETY: flushing a single page is always safe.
-        unsafe { crate::arch::Platform::flush_tlb_page(addr) };
+        crate::arch::Platform::flush_tlb_page(addr);
     }
 
     /// Acknowledge that the flush is intentionally deferred or not needed.
     ///
     /// Use this when you are about to switch address spaces anyway.
+    #[allow(dead_code)]
     #[inline]
     pub fn ignore(self) {
         core::mem::forget(self);
@@ -137,23 +148,6 @@ impl Drop for TlbFlush {
     }
 }
 
-/// Issue a single-page TLB invalidation for `addr` on the current core.
-///
-/// # Safety
-///
-/// Must be called from a context where the relevant address space is active.
-#[inline]
-unsafe fn flush_tlb_page(addr: VirtAddr) {
-    #[cfg(target_arch = "x86_64")]
-    unsafe {
-        core::arch::asm!(
-            "invlpg [{addr}]",
-            addr = in(reg) addr.as_usize(),
-            options(nostack, preserves_flags),
-        );
-    }
-}
-
 /// Errors that [`Mapper::map`] can return.
 #[derive(Debug, PartialEq, Eq)]
 pub enum MapError {
@@ -162,6 +156,7 @@ pub enum MapError {
     /// A page table frame could not be allocated.
     FrameAllocationFailed,
     /// The virtual address is not page-aligned.
+    #[allow(dead_code)]
     UnalignedAddress,
 }
 
@@ -176,6 +171,7 @@ impl core::fmt::Display for MapError {
 }
 
 #[derive(PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum UnmapError {
     /// The virtual address was not mapped.
     NotMapped,
@@ -218,6 +214,7 @@ impl core::fmt::Debug for UnmapError {
 /// consumed by calling `.flush()` or `.ignore()`. Failing to flush after a
 /// mapping change leaves stale entries in the TLB and causes silent
 /// memory-safety violations.
+#[allow(dead_code)]
 pub trait Mapper {
     /// Map `virt` -> `frame` with the given protection flags.
     ///

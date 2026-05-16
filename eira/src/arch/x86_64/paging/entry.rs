@@ -1,6 +1,6 @@
 //! x86_64 page table entry type and hardware flags.
 
-use crate::mm::{Frame4K, PAGE_SIZE, PhysAddr, PhysFrame};
+use crate::mm::{Frame4K, PhysAddr, PhysFrame};
 
 const PHYS_MASK: u64 = 0x000f_ffff_ffff_f000;
 
@@ -21,6 +21,7 @@ impl EntryFlags {
     pub const GLOBAL: Self = Self(1 << 8);
     pub const NO_EXECUTE: Self = Self(1 << 63);
 
+    #[allow(dead_code)]
     pub const fn empty() -> Self {
         Self(0)
     }
@@ -29,19 +30,26 @@ impl EntryFlags {
     pub const fn contains(self, other: Self) -> bool {
         self.0 & other.0 == other.0
     }
+
     #[inline]
+    #[allow(dead_code)]
     pub const fn is_empty(self) -> bool {
         self.0 == 0
     }
+
     #[inline]
     pub const fn or(self, other: Self) -> Self {
         Self(self.0 | other.0)
     }
+
     #[inline]
+    #[allow(dead_code)]
     pub const fn without(self, other: Self) -> Self {
         Self(self.0 & !other.0)
     }
+
     #[inline]
+    #[allow(dead_code)]
     pub const fn bits(self) -> u64 {
         self.0
     }
@@ -88,6 +96,7 @@ use crate::mm::paging::PageFlags;
 /// Convert the arch-agnostic [`PageFlags`] into x86_64 hardware [`EntryFlags`].
 ///
 /// `PRESENT` is always set; `NO_EXECUTE` is set when `EXECUTE` is absent.
+#[allow(dead_code)]
 pub(super) fn entry_flags_from_page_flags(pf: PageFlags) -> EntryFlags {
     let mut ef = EntryFlags::PRESENT;
 
@@ -111,6 +120,7 @@ pub(super) fn entry_flags_from_page_flags(pf: PageFlags) -> EntryFlags {
 }
 
 /// Convert x86_64 hardware [`EntryFlags`] back to arch-agnostic [`PageFlags`].
+#[allow(dead_code)]
 pub(super) fn page_flags_from_entry_flags(ef: EntryFlags) -> PageFlags {
     let mut pf = PageFlags::READ; // present implies readable
 
@@ -152,6 +162,7 @@ impl PageTableEntry {
     ///
     /// At level 2 this means a 2 MiB page; at level 3 a 1 GiB page.
     #[inline]
+    #[allow(dead_code)]
     pub fn is_huge(self) -> bool {
         self.flags().contains(EntryFlags::HUGE_PAGE)
     }
@@ -176,6 +187,7 @@ impl PageTableEntry {
 
     /// Construct an entry from a frame and flags.
     #[inline]
+    #[allow(dead_code)]
     pub fn new(frame: Frame4K, flags: EntryFlags) -> Self {
         let addr = frame.base().as_usize() as u64;
         Self((addr & PHYS_MASK) | flags.bits())
@@ -183,12 +195,14 @@ impl PageTableEntry {
 
     /// Zero this entry (marks it not-present).
     #[inline]
+    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.0 = 0;
     }
 
     /// Raw 64-bit value.
     #[inline]
+    #[allow(dead_code)]
     pub fn raw(self) -> u64 {
         self.0
     }

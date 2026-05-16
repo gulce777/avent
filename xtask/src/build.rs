@@ -1,5 +1,5 @@
-use crate::{Arch, log_build, log_ok, workspace_root};
-use anyhow::{Context, Result, bail};
+use crate::{log_build, log_ok, workspace_root, Arch};
+use anyhow::{bail, Context, Result};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -35,7 +35,6 @@ pub fn build_kernel_inner(arch: &Arch, release: bool, tests: bool) -> Result<()>
     }
 
     let profile_label = if release { "release" } else { "debug" };
-    let mode_label = if tests { "test" } else { "kernel" };
 
     log_build!(
         "Compiling arc_kernel   [arch: {}  profile: {}]",

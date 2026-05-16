@@ -7,10 +7,6 @@ use core::fmt;
 
 /// The standard 4 KiB page size.
 pub const PAGE_SIZE: usize = 4096;
-/// The 2 MiB large page size.
-pub const LARGE_PAGE_SIZE: usize = 2 * 1024 * 1024;
-/// The 1 GiB huge page size.
-pub const HUGE_PAGE_SIZE: usize = 1024 * 1024 * 1024;
 
 /// A 64-bit physical memory address.
 ///
@@ -48,6 +44,7 @@ impl PhysAddr {
     /// Prefer [`new`](Self::new) or [`new_unchecked`](Self::new_unchecked) when
     /// the address is known to be valid.
     #[inline]
+    #[allow(dead_code)]
     pub const fn new_truncate(addr: usize) -> Self {
         Self(addr & Self::MAX.0)
     }
@@ -104,6 +101,7 @@ impl PhysAddr {
     /// The caller must ensure the physical address is mapped in the current
     /// virtual address space (e.g. via the HHDM).
     #[inline]
+    #[allow(dead_code)]
     pub const fn as_ptr<T>(self) -> *const T {
         self.0 as *const T
     }
@@ -115,6 +113,7 @@ impl PhysAddr {
     /// The caller must ensure the physical address is mapped and writable in
     /// the current virtual address space.
     #[inline]
+    #[allow(dead_code)]
     pub const fn as_mut_ptr<T>(self) -> *mut T {
         self.0 as *mut T
     }
@@ -134,6 +133,7 @@ impl PhysAddr {
     ///
     /// Returns `None` on underflow.
     #[inline]
+    #[allow(dead_code)]
     pub const fn checked_sub(self, rhs: usize) -> Option<Self> {
         match self.0.checked_sub(rhs) {
             Some(v) => Some(Self(v)),
@@ -183,6 +183,7 @@ impl VirtAddr {
     /// Construct a canonical `VirtAddr`, returning `None` if `addr` is
     /// non-canonical (bits 48–63 are not a sign-extension of bit 47).
     #[inline]
+    #[allow(dead_code)]
     pub const fn new(addr: usize) -> Option<Self> {
         if Self::is_canonical(addr) {
             Some(Self(addr))
@@ -197,12 +198,14 @@ impl VirtAddr {
     ///
     /// `addr` must be a canonical virtual address.
     #[inline]
+    #[allow(dead_code)]
     pub const unsafe fn new_unchecked(addr: usize) -> Self {
         Self(addr)
     }
 
     /// Sign-extend bit 47 to make `addr` canonical, then wrap in `VirtAddr`.
     #[inline]
+    #[allow(dead_code)]
     pub const fn new_canonical(addr: usize) -> Self {
         Self(((addr << 16) as isize >> 16) as usize)
     }
@@ -241,6 +244,7 @@ impl VirtAddr {
     ///
     /// Panics if `align` is not a power of two.
     #[inline]
+    #[allow(dead_code)]
     pub const fn align_down(self, align: usize) -> Self {
         assert!(align.is_power_of_two());
         Self::new_canonical(self.0 & !(align - 1))
@@ -252,6 +256,7 @@ impl VirtAddr {
     ///
     /// Panics if `align` is not a power of two.
     #[inline]
+    #[allow(dead_code)]
     pub const fn align_up(self, align: usize) -> Option<Self> {
         assert!(align.is_power_of_two());
         let mask = align - 1;
@@ -268,6 +273,7 @@ impl VirtAddr {
     /// The caller must ensure this address is valid and mapped in the
     /// current address space.
     #[inline]
+    #[allow(dead_code)]
     pub const fn as_ptr<T>(self) -> *const T {
         self.0 as *const T
     }
@@ -279,6 +285,7 @@ impl VirtAddr {
     /// The caller must ensure this address is valid, mapped and writable
     /// in the current address space.
     #[inline]
+    #[allow(dead_code)]
     pub const fn as_mut_ptr<T>(self) -> *mut T {
         self.0 as *mut T
     }

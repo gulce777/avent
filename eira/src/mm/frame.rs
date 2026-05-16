@@ -5,7 +5,7 @@
 //! the type system distinguishes 4 KiB frames from 2 MiB large frames and
 //! 1 GiB huge frames. Mixing them is a compile-time error.
 
-use super::addr::{HUGE_PAGE_SIZE, LARGE_PAGE_SIZE, PAGE_SIZE, PhysAddr};
+use super::addr::{PAGE_SIZE, PhysAddr};
 use crate::mm::FrameAllocator;
 use core::fmt;
 use core::marker::PhantomData;
@@ -26,12 +26,9 @@ pub struct PhysFrame<const S: usize = PAGE_SIZE> {
 
 /// A standard 4 KiB physical frame.
 pub type Frame4K = PhysFrame<{ PAGE_SIZE }>;
-/// A 2 MiB large physical frame.
-pub type Frame2M = PhysFrame<{ LARGE_PAGE_SIZE }>;
-/// A 1 GiB huge physical frame.
-pub type Frame1G = PhysFrame<{ HUGE_PAGE_SIZE }>;
 
 impl<const S: usize> PhysFrame<S> {
+    #[allow(dead_code)]
     pub const SIZE: usize = S;
 
     /// Construct a `PhysFrame` from a base address.
@@ -77,6 +74,7 @@ impl<const S: usize> PhysFrame<S> {
     /// Returns `None` if `base` is `PhysAddr::MAX - S + 1` or higher,
     /// which would overflow the 52-bit address space.
     #[inline]
+    #[allow(dead_code)]
     pub const fn end(self) -> Option<PhysAddr> {
         self.base.checked_add(S)
     }
@@ -149,6 +147,7 @@ impl OwnedFrame {
     ///
     /// After this call the frame may be handed out again by a future
     /// [`allocate`](crate::mm::allocate) call.
+    #[allow(dead_code)]
     pub fn free(self, allocator: &mut impl FrameAllocator) {
         let this = core::mem::ManuallyDrop::new(self);
 
@@ -179,6 +178,7 @@ impl Drop for OwnedFrame {
 /// Both `start` and `end` are inclusive. An empty range is one where
 /// `start > end`.
 #[derive(Copy, Clone, PartialEq, Eq)]
+#[allow(dead_code)]
 pub struct FrameRange<const S: usize = PAGE_SIZE> {
     start: PhysFrame<S>,
     end: PhysFrame<S>, // inclusive
@@ -187,6 +187,7 @@ pub struct FrameRange<const S: usize = PAGE_SIZE> {
 impl<const S: usize> FrameRange<S> {
     /// Construct a `FrameRange` from an inclusive `[start, end]` pair.
     #[inline]
+    #[allow(dead_code)]
     pub const fn new(start: PhysFrame<S>, end: PhysFrame<S>) -> Self {
         Self { start, end }
     }
@@ -196,6 +197,7 @@ impl<const S: usize> FrameRange<S> {
     /// Returns `None` if the range would overflow or either address is
     /// not representable in 52 bits.
     #[inline]
+    #[allow(dead_code)]
     pub const fn from_addr_len(base: PhysAddr, len: usize) -> Option<Self> {
         if len == 0 {
             return None;
@@ -212,24 +214,28 @@ impl<const S: usize> FrameRange<S> {
 
     /// Returns the first frame in the range.
     #[inline]
+    #[allow(dead_code)]
     pub const fn start(self) -> PhysFrame<S> {
         self.start
     }
 
     /// Returns the last (inclusive) frame in the range.
     #[inline]
+    #[allow(dead_code)]
     pub const fn end(self) -> PhysFrame<S> {
         self.end
     }
 
     /// Returns `true` if the range contains no frames.
     #[inline]
+    #[allow(dead_code)]
     pub const fn is_empty(self) -> bool {
         self.start.index() > self.end.index()
     }
 
     /// Returns the number of frames in this range.
     #[inline]
+    #[allow(dead_code)]
     pub const fn len(self) -> usize {
         if self.is_empty() {
             0
@@ -240,6 +246,7 @@ impl<const S: usize> FrameRange<S> {
 
     /// Returns `true` if `frame` is contained in this range.
     #[inline]
+    #[allow(dead_code)]
     pub const fn contains(self, frame: PhysFrame<S>) -> bool {
         frame.index() >= self.start.index() && frame.index() <= self.end.index()
     }

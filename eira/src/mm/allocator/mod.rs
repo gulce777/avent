@@ -27,6 +27,7 @@ pub trait FrameAllocator {
     /// [`allocate`](Self::allocate) on this allocator instance, and must not
     /// have been deallocated since. Prefer [`OwnedFrame::free`] over calling this
     /// directly.
+    #[allow(dead_code)]
     unsafe fn deallocate(&mut self, frame: PhysFrame<{ PAGE_SIZE }>);
 
     /// Allocate `count` contiguous frames.
@@ -34,6 +35,7 @@ pub trait FrameAllocator {
     /// The default implementation only satisfies `count == 1` and returns
     /// `None` for anything larger. Allocators that can provide genuinely
     /// contiguous frames should override this method.
+    #[allow(dead_code)]
     fn allocate_contiguous(&mut self, count: usize) -> Option<OwnedFrame> {
         if count == 1 { self.allocate() } else { None }
     }
@@ -46,6 +48,7 @@ pub trait FrameAllocator {
 
     /// Returns the number of currently allocated frames.
     #[inline]
+    #[allow(dead_code)]
     fn used_frames(&self) -> usize {
         self.total_frames() - self.free_frames()
     }

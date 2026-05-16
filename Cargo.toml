@@ -1,5 +1,6 @@
 [workspace]
-members = ["eira", "xtask"]
+members = ["eira"]
+exclude = ["xtask"]
 resolver = "2"
 
 [profile.dev]

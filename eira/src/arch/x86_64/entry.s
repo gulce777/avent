@@ -1,4 +1,3 @@
-.intel_syntax noprefix
 .section .text
 .global _start
 .type _start, @function

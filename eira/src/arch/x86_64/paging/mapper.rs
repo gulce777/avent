@@ -15,7 +15,7 @@ use super::{
     table::{PageTable, PageTableLevel},
 };
 use crate::mm::{
-    Frame4K, OwnedFrame, PhysAddr, PhysFrame, VirtAddr,
+    Frame4K, OwnedFrame, PhysAddr, VirtAddr,
     paging::{MapError, Mapper, PageFlags, TlbFlush, UnmapError},
 };
 
@@ -26,6 +26,7 @@ use crate::mm::{
 /// `phys` must be a valid, mapped physical address. The HHDM must have been
 /// initialised before calling this (i.e. after `mm::init::init()`).
 #[inline]
+#[allow(dead_code)]
 unsafe fn phys_to_virt(phys: PhysAddr, hhdm: usize) -> *mut u8 {
     (phys.as_usize() + hhdm) as *mut u8
 }
@@ -38,6 +39,7 @@ unsafe fn phys_to_virt(phys: PhysAddr, hhdm: usize) -> *mut u8 {
 /// - `frame` must contain a valid, properly aligned `PageTable`.
 /// - No other live reference to the same frame may exist simultaneously.
 #[inline]
+#[allow(dead_code)]
 unsafe fn table_at_frame(frame: Frame4K, hhdm: usize) -> &'static mut PageTable {
     let ptr = unsafe { phys_to_virt(frame.base(), hhdm) as *mut PageTable };
     // SAFETY: caller guarantees alignment and exclusive access.
@@ -69,12 +71,14 @@ impl PageTableMapper {
     ///
     /// - `pml4` must contain a valid, zeroed or previously populated PML4.
     /// - `hhdm_offset` must be the value returned by Limine's HHDM request.
+    #[allow(dead_code)]
     pub unsafe fn new(pml4: Frame4K, hhdm_offset: usize) -> Self {
         Self { pml4, hhdm_offset }
     }
 
     /// Returns the PML4 frame (i.e. the value to load into CR3).
     #[inline]
+    #[allow(dead_code)]
     pub fn pml4(&self) -> Frame4K {
         self.pml4
     }
@@ -84,6 +88,7 @@ impl PageTableMapper {
     ///
     /// Returns `None` if any intermediate entry is not present, or if a huge
     /// page is encountered above level 1.
+    #[allow(dead_code)]
     fn walk(&self, virt: VirtAddr) -> Option<&PageTableEntry> {
         let hhdm = self.hhdm_offset;
 
@@ -114,6 +119,7 @@ impl PageTableMapper {
     ///
     /// If any intermediate table does not exist and `alloc` is `true`, it is
     /// allocated from the global frame allocator and zeroed.
+    #[allow(dead_code)]
     fn walk_or_create(
         &mut self,
         virt: VirtAddr,

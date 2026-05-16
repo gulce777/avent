@@ -144,6 +144,7 @@ impl BitmapAllocator {
     ///
     /// No concurrent mutable access.
     #[inline]
+    #[allow(dead_code)]
     unsafe fn bitmap(&self) -> &[u8] {
         // SAFETY: caller ensures no aliasing mutable access.
         unsafe { self.bitmap.as_ref() }
@@ -162,6 +163,7 @@ impl BitmapAllocator {
 
     /// Returns `true` if `frame` is currently allocated.
     #[inline]
+    #[allow(dead_code)]
     fn is_allocated(&self, frame: PhysFrame) -> bool {
         let idx = frame.index();
         let byte = idx / 8;

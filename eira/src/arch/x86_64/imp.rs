@@ -4,7 +4,6 @@ use super::gdt::CpuTables;
 use super::idt::Idt;
 use crate::arch::Arch;
 use crate::mm::VirtAddr;
-use spin::Once;
 
 static BSP_TABLES: CpuTables = CpuTables::new();
 static IDT: Idt = Idt::new();

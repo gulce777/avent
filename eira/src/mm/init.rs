@@ -24,6 +24,7 @@ pub static FRAME_ALLOCATOR: Mutex<Option<BitmapAllocator>> = Mutex::new(None);
 
 static HHDM_OFFSET: AtomicUsize = AtomicUsize::new(0);
 
+#[allow(dead_code)]
 pub fn hhdm_offset() -> usize {
     HHDM_OFFSET.load(Ordering::Relaxed)
 }
@@ -168,6 +169,7 @@ pub fn allocate() -> OwnedFrame {
 /// # Panics
 ///
 /// [`init`] has not been called yet.
+#[allow(dead_code)]
 pub fn deallocate(frame: OwnedFrame) {
     let mut guard = FRAME_ALLOCATOR.lock();
     let allocator = guard.as_mut().expect("frame allocator not initialised");
@@ -180,6 +182,7 @@ pub fn deallocate(frame: OwnedFrame) {
 /// # Panics
 ///
 /// [`init`] has not been called yet.
+#[allow(dead_code)]
 pub fn free_frames() -> usize {
     FRAME_ALLOCATOR
         .lock()
@@ -193,6 +196,7 @@ pub fn free_frames() -> usize {
 /// # Panics
 ///
 /// [`init`] has not been called yet.
+#[allow(dead_code)]
 pub fn total_frames() -> usize {
     FRAME_ALLOCATOR
         .lock()

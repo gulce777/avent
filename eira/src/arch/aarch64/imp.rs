@@ -1,6 +1,6 @@
 //! AArch64 implementation of the [`Arch`] trait.
 
-use crate::arch::Arch;
+use crate::{arch::Arch, mm::VirtAddr};
 
 pub struct AArch64;
 
@@ -21,7 +21,7 @@ impl Arch for AArch64 {
         // TODO: load exception vector table.
     }
 
-    fn flush_tlb_page() {
+    fn flush_tlb_page(addr: VirtAddr) {
         unsafe {
             let va = addr.as_usize() >> 12;
             core::arch::asm!(

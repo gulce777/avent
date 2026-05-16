@@ -56,6 +56,7 @@ pub trait Arch {
     fn init_cpu();
 
     /// Invalidate the TLB entry for a single virtual address on the current core.
+    #[allow(dead_code)]
     fn flush_tlb_page(addr: VirtAddr);
 
     /// Create a fresh page-table mapper for use in tests.
