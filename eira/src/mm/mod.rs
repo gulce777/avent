@@ -6,6 +6,7 @@ pub mod addr;
 pub mod allocator;
 pub mod frame;
 pub mod init;
+pub mod paging;
 
 #[cfg(feature = "kernel-tests")]
 mod tests;

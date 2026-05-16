@@ -20,4 +20,17 @@ impl Arch for AArch64 {
     fn init_cpu() {
         // TODO: load exception vector table.
     }
+
+    fn flush_tlb_page() {
+        unsafe {
+            let va = addr.as_usize() >> 12;
+            core::arch::asm!(
+                "tlbi vaae1is, {va}",
+                "dsb ish",
+                "isb",
+                va = in(reg) va,
+                options(nostack),
+            );
+        }
+    }
 }

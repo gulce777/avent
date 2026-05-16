@@ -9,6 +9,8 @@
 //! - `x86_64`
 //! - `aarch64`
 
+use crate::mm::VirtAddr;
+
 #[cfg(target_arch = "x86_64")]
 mod x86_64;
 #[cfg(target_arch = "x86_64")]
@@ -52,4 +54,11 @@ pub trait Arch {
     /// Called once per logical CPU during early boot, before interrupts
     /// are enabled.
     fn init_cpu();
+
+    /// Invalidate the TLB entry for a single virtual address on the current core.
+    fn flush_tlb_page(addr: VirtAddr);
+
+    /// Create a fresh page-table mapper for use in tests.
+    #[cfg(feature = "kernel-tests")]
+    fn new_test_mapper() -> impl crate::mm::paging::Mapper;
 }

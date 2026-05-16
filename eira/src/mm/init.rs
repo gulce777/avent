@@ -11,6 +11,7 @@ use super::addr::{PAGE_SIZE, PhysAddr};
 use super::allocator::FrameAllocator;
 use super::allocator::bitmap::BitmapAllocator;
 use super::frame::OwnedFrame;
+use core::sync::atomic::{AtomicUsize, Ordering};
 use limine::memmap::MEMMAP_USABLE;
 use limine::request::{HhdmRespData, MemmapRespData, Response};
 use spin::Mutex;
@@ -20,6 +21,12 @@ use spin::Mutex;
 /// `None` until [`init`] completes. Wrapped in a [`Mutex`] because multiple
 /// cores may call [`allocate`] or [`deallocate`] concurrently.
 pub static FRAME_ALLOCATOR: Mutex<Option<BitmapAllocator>> = Mutex::new(None);
+
+static HHDM_OFFSET: AtomicUsize = AtomicUsize::new(0);
+
+pub fn hhdm_offset() -> usize {
+    HHDM_OFFSET.load(Ordering::Relaxed)
+}
 
 /// Initialize the physical memory allocator from the Limine memory map.
 ///
@@ -42,6 +49,7 @@ pub unsafe fn init(memmap: &Response<MemmapRespData>, hhdm: &Response<HhdmRespDa
     assert!(guard.is_none(), "mm::init::init() called more than once");
 
     let hhdm_offset = hhdm.offset as usize;
+    HHDM_OFFSET.store(hhdm_offset, Ordering::Relaxed);
 
     let max_phys = memmap
         .entries()

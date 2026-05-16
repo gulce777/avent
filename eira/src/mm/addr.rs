@@ -214,6 +214,10 @@ impl VirtAddr {
         top == 0 || top == (1 << 17) - 1
     }
 
+    pub const fn is_canonical_addr(self) -> bool {
+        Self::is_canonical(self.0)
+    }
+
     /// Returns the address as a `usize`.
     #[inline]
     pub const fn as_usize(self) -> usize {

@@ -154,6 +154,16 @@ impl OwnedFrame {
 
         unsafe { allocator.deallocate(this.inner) };
     }
+
+    /// Consume the handle and return the raw frame without deallocating.
+    ///
+    /// # Safety
+    /// Caller must ensure the frame is eventually freed or ownership
+    /// is transferred (e.g. into a page table hierarchy).
+    pub unsafe fn into_inner(self) -> PhysFrame {
+        let this = core::mem::ManuallyDrop::new(self);
+        this.inner
+    }
 }
 
 impl Drop for OwnedFrame {

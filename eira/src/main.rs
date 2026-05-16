@@ -54,7 +54,6 @@ pub extern "C" fn kmain() -> ! {
     print!("\x1B[2J\x1B[H");
 
     logger::init();
-
     Platform::init_cpu();
 
     let memmap = MEMORY_MAP_REQUEST

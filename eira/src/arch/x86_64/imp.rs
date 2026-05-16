@@ -3,6 +3,7 @@
 use super::gdt::CpuTables;
 use super::idt::Idt;
 use crate::arch::Arch;
+use crate::mm::VirtAddr;
 use spin::Once;
 
 static BSP_TABLES: CpuTables = CpuTables::new();
@@ -11,17 +12,15 @@ static IDT: Idt = Idt::new();
 pub struct X86_64;
 
 impl Arch for X86_64 {
-    /// Executes `hlt`. Pauses the core until the next interrupt fires.
     #[inline]
     fn halt() {
-        // SAFETY: `hlt` is always valid in ring 0.
+        // SAFETY: valid in ring 0.
         unsafe { core::arch::asm!("hlt", options(nomem, nostack, preserves_flags)) };
     }
 
-    /// Executes `cli`, masks all external interrupts on the current core.
     #[inline]
     fn disable_interrupts() {
-        // SAFETY: `cli` is valid in ring 0 and has no memory side effects.
+        // SAFETY: valid in ring 0.
         unsafe { core::arch::asm!("cli", options(nomem, nostack)) };
     }
 
@@ -29,5 +28,28 @@ impl Arch for X86_64 {
         unsafe { BSP_TABLES.load() };
 
         unsafe { IDT.load() };
+    }
+
+    fn flush_tlb_page(addr: VirtAddr) {
+        unsafe {
+            core::arch::asm!(
+                "invlpg [{addr}]",
+                addr = in(reg) addr.as_usize(),
+                options(nostack, preserves_flags),
+            );
+        }
+    }
+
+    #[cfg(feature = "kernel-tests")]
+    fn new_test_mapper() -> impl crate::mm::paging::Mapper {
+        let pml4 = crate::mm::allocate();
+        let hhdm = crate::mm::init::hhdm_offset();
+        unsafe {
+            let base = pml4.base();
+            let ptr = (base.as_usize() + hhdm) as *mut u8;
+            core::ptr::write_bytes(ptr, 0, crate::mm::PAGE_SIZE);
+            let raw_pml4 = pml4.into_inner();
+            super::paging::mapper::PageTableMapper::new(raw_pml4, hhdm)
+        }
     }
 }

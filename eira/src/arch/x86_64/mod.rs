@@ -7,6 +7,7 @@ mod entry {
 pub mod gdt;
 pub mod idt;
 pub mod imp;
+pub mod paging;
 
 /// Enable the x87 FPU and SSE instruction sets.
 ///
