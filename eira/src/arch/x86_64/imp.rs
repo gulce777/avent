@@ -75,4 +75,17 @@ impl Arch for X86_64 {
         // SAFETY: fresh frame, correct HHDM. see `create_mapper`
         unsafe { Self::create_mapper(pml4) }
     }
+
+    fn active_page_table() -> crate::mm::PhysAddr {
+        let cr3: usize;
+        unsafe {
+            core::arch::asm!(
+                "mov {}, cr3",
+                out(reg) cr3,
+                options(nomem, nostack, preserves_flags)
+            );
+        }
+
+        crate::mm::PhysAddr::new_truncate(cr3 & !0xFFF)
+    }
 }

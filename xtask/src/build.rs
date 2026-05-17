@@ -48,7 +48,7 @@ pub fn build_kernel_inner(arch: &Arch, release: bool, tests: bool) -> Result<()>
         .arg("--target")
         .arg(&target_json)
         .args([
-            "-Zbuild-std=core,compiler_builtins",
+            "-Zbuild-std=core,compiler_builtins,alloc",
             "-Zbuild-std-features=compiler-builtins-mem",
             "-Zjson-target-spec",
         ]);

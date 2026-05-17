@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+extern crate alloc;
+
 mod arch;
 mod logger;
 mod mm;
@@ -10,10 +12,16 @@ mod test;
 
 use crate::arch::{Arch, Platform};
 use crate::mm::PAGE_SIZE;
-use crate::mm::address_space::{AddressSpace, KernelAddressSpace};
+use crate::mm::address_space::{AllocKind, KernelAddressSpace};
+use crate::mm::heap::LockedHeap;
 use crate::mm::paging::PageFlags;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use limine::request::{FramebufferRequest, HhdmRequest, MemmapRequest, StackSizeRequest};
 use limine::{BaseRevision, RequestsEndMarker, RequestsStartMarker};
+
+#[global_allocator]
+pub static ALLOCATOR: LockedHeap = LockedHeap::new();
 
 #[used]
 #[unsafe(link_section = ".requests_start")]
@@ -72,44 +80,43 @@ pub extern "C" fn kmain() -> ! {
 
     unsafe { mm::init::init(memmap, hhdm) };
 
+    let root_phys = Platform::active_page_table();
+
+    let mut kernel_space = unsafe { KernelAddressSpace::from_active(root_phys) };
+    let heap_size = 1024 * 1024;
+
+    let heap_region = kernel_space
+        .alloc_and_map(
+            heap_size,
+            PAGE_SIZE,
+            PageFlags::kernel_data(),
+            AllocKind::Heap,
+        )
+        .expect("failed to allocate kernel heap");
+
+    unsafe {
+        ALLOCATOR
+            .lock()
+            .add_memory(heap_region.base.as_mut_ptr::<u8>(), heap_region.size);
+    }
+
+    log::info!("kernel heap initialised with {} bytes", heap_size);
+
+    let mut test_vec = Vec::new();
+    for i in 0..500 {
+        test_vec.push(i);
+    }
+
+    let test_box = Box::new("eira kernel");
+
+    log::info!("vec length: {}, box: {}", test_vec.len(), test_box);
+
     #[cfg(feature = "kernel-tests")]
     crate::test::runner::run_all();
 
     log::info!("halting");
     loop {
         Platform::halt();
-    }
-}
-
-/// Fill a rectangle on the framebuffer with a given ARGB colour.
-///
-/// # Safety
-///
-/// `fb_ptr` must point to a valid, mapped framebuffer region large enough to contain
-/// all pixels in the rectangle defined by `(x, y, width, height)`.
-unsafe fn draw_rect(
-    fb_ptr: *mut u8,
-    pitch: usize,
-    bpp: usize,
-    x: usize,
-    y: usize,
-    width: usize,
-    height: usize,
-    argb: u32,
-) {
-    let [b, g, r, a] = argb.to_le_bytes();
-
-    for row in y..(y + height) {
-        for col in x..(x + width) {
-            let offset = row * pitch + col * bpp;
-            // SAFETY: caller guarantees the pointer and bounds are valid.
-            unsafe {
-                core::ptr::write_volatile(fb_ptr.add(offset), b);
-                core::ptr::write_volatile(fb_ptr.add(offset + 1), g);
-                core::ptr::write_volatile(fb_ptr.add(offset + 2), r);
-                core::ptr::write_volatile(fb_ptr.add(offset + 3), a);
-            }
-        }
     }
 }
 

@@ -98,6 +98,8 @@ pub trait Arch {
     #[allow(dead_code)]
     unsafe fn mapper_from_active(root_phys: crate::mm::PhysAddr) -> Self::Mapper;
 
+    fn active_page_table() -> crate::mm::PhysAddr;
+
     /// Create a fresh page-table mapper for use in tests.
     #[cfg(feature = "kernel-tests")]
     fn new_test_mapper() -> impl crate::mm::paging::Mapper;

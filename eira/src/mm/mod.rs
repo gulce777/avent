@@ -6,10 +6,13 @@ pub mod addr;
 pub mod address_space;
 pub mod allocator;
 pub mod frame;
+pub mod heap;
 pub mod init;
 pub mod paging;
 pub mod vm;
 
+#[cfg(feature = "kernel-tests")]
+mod heap_tests;
 #[cfg(feature = "kernel-tests")]
 mod tests;
 
