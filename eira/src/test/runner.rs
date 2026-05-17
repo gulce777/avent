@@ -5,6 +5,8 @@
 //! Tests run in link order within each [`TestKind`] group:
 //! `Unit` -> `Physical` -> `Arch` -> `Integration`
 
+use alloc::vec::Vec;
+
 use super::{TestCase, TestKind, TestResult};
 use crate::arch::{Arch, Platform};
 
@@ -86,11 +88,7 @@ pub fn run_all() -> ! {
         TestKind::Arch,
         TestKind::Integration,
     ] {
-        let group: &[&TestCase] = &all
-            .iter()
-            .copied()
-            .filter(|t| t.kind == kind)
-            .collect::<arrayvec::ArrayVec<_, 256>>(); // no alloc yet; fixed cap
+        let group: Vec<&TestCase> = all.iter().copied().filter(|t| t.kind == kind).collect();
 
         if group.is_empty() {
             continue;
