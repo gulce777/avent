@@ -7,20 +7,23 @@ mod arch;
 mod logger;
 mod mm;
 mod serial;
+mod task;
 #[cfg(feature = "kernel-tests")]
 mod test;
 
-use alloc::boxed::Box;
-use alloc::vec::Vec;
+use alloc::sync::Arc;
 
 use limine::request::{FramebufferRequest, HhdmRequest, MemmapRequest, StackSizeRequest};
 use limine::{BaseRevision, RequestsEndMarker, RequestsStartMarker};
+use spin::Mutex;
 
 use crate::arch::{Arch, Platform};
 use crate::mm::PAGE_SIZE;
 use crate::mm::address_space::{AllocKind, KernelAddressSpace};
 use crate::mm::heap::LockedHeap;
 use crate::mm::paging::PageFlags;
+use crate::task::scheduler;
+use crate::task::task::Priority;
 
 #[global_allocator]
 pub static ALLOCATOR: LockedHeap = LockedHeap::new();
@@ -69,15 +72,14 @@ pub extern "C" fn kmain() -> ! {
 
     serial::init();
     print!("\x1B[2J\x1B[H");
-
     logger::init();
     Platform::init_cpu();
-
     Platform::register_irq(0, timer_tick);
 
     let memmap = MEMORY_MAP_REQUEST
         .response()
         .expect("no memory map response");
+
     let hhdm = HHDM_REQUEST.response().expect("no HHDM response");
 
     if BASE_REVISION.is_supported() {
@@ -88,10 +90,9 @@ pub extern "C" fn kmain() -> ! {
 
     unsafe { mm::init::init(memmap, hhdm) };
 
-    let root_phys = Platform::active_page_table();
-
-    let mut kernel_space = unsafe { KernelAddressSpace::from_active(root_phys) };
     let heap_size = 1024 * 1024;
+    let root_phys = Platform::active_page_table();
+    let mut kernel_space = unsafe { KernelAddressSpace::from_active(root_phys) };
 
     let heap_region = kernel_space
         .alloc_and_map(
@@ -107,17 +108,20 @@ pub extern "C" fn kmain() -> ! {
             .lock()
             .add_memory(heap_region.base.as_mut_ptr::<u8>(), heap_region.size);
     }
-
     log::info!("kernel heap initialised with {} bytes", heap_size);
+
+    let kernel_space = Arc::new(Mutex::new(kernel_space));
 
     #[cfg(feature = "kernel-tests")]
     crate::test::runner::run_all();
 
-    log::info!("halting");
-    loop {
-        Platform::enable_interrupts();
-        Platform::halt();
-    }
+    scheduler::init(kernel_space.clone());
+
+    scheduler::spawn(task_a, Priority::NORMAL, kernel_space.clone());
+    scheduler::spawn(task_b, Priority::NORMAL, kernel_space.clone());
+
+    scheduler::yield_now();
+    unreachable!();
 }
 
 #[cold]
@@ -146,5 +150,19 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 
     loop {
         Platform::halt();
+    }
+}
+
+fn task_a() -> ! {
+    loop {
+        log::info!("task A is running");
+        scheduler::yield_now();
+    }
+}
+
+fn task_b() -> ! {
+    loop {
+        log::info!("task B is running");
+        scheduler::yield_now();
     }
 }

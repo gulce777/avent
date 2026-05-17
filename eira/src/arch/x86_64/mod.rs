@@ -4,6 +4,7 @@ mod entry {
     core::arch::global_asm!(include_str!("entry.s"));
 }
 
+pub mod context;
 pub mod gdt;
 pub mod idt;
 pub mod imp;

@@ -12,6 +12,7 @@ pub struct X86_64;
 
 impl Arch for X86_64 {
     type Mapper = super::paging::mapper::PageTableMapper;
+    type Context = super::context::X86_64Context;
 
     #[inline]
     fn halt() {
@@ -89,7 +90,6 @@ impl Arch for X86_64 {
     #[cfg(feature = "kernel-tests")]
     fn new_test_mapper() -> impl crate::mm::paging::Mapper {
         let pml4 = crate::mm::allocate();
-        let hhdm = crate::mm::init::hhdm_offset();
         // SAFETY: fresh frame, correct HHDM. see `create_mapper`
         unsafe { Self::create_mapper(pml4) }
     }

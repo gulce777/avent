@@ -10,6 +10,7 @@
 //! - `aarch64`
 
 use crate::mm::VirtAddr;
+use crate::task::TaskContext;
 
 #[cfg(target_arch = "x86_64")]
 pub mod x86_64;
@@ -41,6 +42,7 @@ pub type PlatformMapper = <Platform as Arch>::Mapper;
 /// with no runtime representation.
 pub trait Arch {
     type Mapper: crate::mm::paging::Mapper;
+    type Context: TaskContext;
 
     /// Halt the current CPU core until the next interrupt or event.
     ///
