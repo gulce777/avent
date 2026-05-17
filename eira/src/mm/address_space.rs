@@ -6,15 +6,11 @@
 //! use the [`KernelAddressSpace`] alias so the parameter is never written out
 //! explicitly.
 
-use crate::{
-    arch::{Arch, Platform, PlatformMapper},
-    mm::{
-        self, FrameAllocator, OwnedFrame, PAGE_SIZE, PhysAddr, VirtAddr,
-        init::FRAME_ALLOCATOR,
-        paging::{MapError, Mapper, PageFlags, TlbFlush, UnmapError},
-        vm::region::{Region, RegionAllocator, RegionError},
-    },
-};
+use crate::arch::{Arch, Platform, PlatformMapper};
+use crate::mm::init::FRAME_ALLOCATOR;
+use crate::mm::paging::{MapError, Mapper, PageFlags, TlbFlush, UnmapError};
+use crate::mm::vm::region::{Region, RegionAllocator, RegionError};
+use crate::mm::{self, FrameAllocator, OwnedFrame, PAGE_SIZE, PhysAddr, VirtAddr};
 
 #[allow(dead_code)]
 pub type KernelAddressSpace = AddressSpace<PlatformMapper>;

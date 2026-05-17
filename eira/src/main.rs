@@ -10,15 +10,17 @@ mod serial;
 #[cfg(feature = "kernel-tests")]
 mod test;
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+
+use limine::request::{FramebufferRequest, HhdmRequest, MemmapRequest, StackSizeRequest};
+use limine::{BaseRevision, RequestsEndMarker, RequestsStartMarker};
+
 use crate::arch::{Arch, Platform};
 use crate::mm::PAGE_SIZE;
 use crate::mm::address_space::{AllocKind, KernelAddressSpace};
 use crate::mm::heap::LockedHeap;
 use crate::mm::paging::PageFlags;
-use alloc::boxed::Box;
-use alloc::vec::Vec;
-use limine::request::{FramebufferRequest, HhdmRequest, MemmapRequest, StackSizeRequest};
-use limine::{BaseRevision, RequestsEndMarker, RequestsStartMarker};
 
 #[global_allocator]
 pub static ALLOCATOR: LockedHeap = LockedHeap::new();

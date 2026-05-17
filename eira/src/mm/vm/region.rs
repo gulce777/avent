@@ -14,7 +14,7 @@
 //! 3. No two slots overlap or are directly adjacent. Adjacent free regions are always merged
 //!    immediately on insertion.
 
-use crate::mm::addr::{PAGE_SIZE, VirtAddr};
+use crate::mm::{PAGE_SIZE, VirtAddr};
 
 /// Maximum number of simultaneously tracked free regions.
 pub const CAPACITY: usize = 64;

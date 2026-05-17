@@ -17,8 +17,12 @@ mod heap_tests;
 mod tests;
 
 pub use addr::{PAGE_SIZE, PhysAddr, VirtAddr};
+#[allow(unused_imports)]
+pub use address_space::{AllocKind, KernelAddressSpace};
 pub use allocator::FrameAllocator;
 #[allow(unused_imports)]
 pub use frame::{Frame4K, FrameRange, OwnedFrame, PhysFrame};
 #[allow(unused_imports)]
 pub use init::{allocate, deallocate, free_frames, total_frames};
+#[allow(unused_imports)]
+pub use paging::{MapError, Mapper, PageFlags, UnmapError};

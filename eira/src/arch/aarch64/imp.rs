@@ -1,6 +1,7 @@
 //! AArch64 implementation of the [`Arch`] trait.
 
-use crate::{arch::Arch, mm::VirtAddr};
+use crate::arch::Arch;
+use crate::mm::VirtAddr;
 
 pub struct AArch64;
 

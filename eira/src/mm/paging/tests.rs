@@ -1,9 +1,7 @@
 use crate::arch::{Arch, Platform};
-use crate::mm::{
-    VirtAddr,
-    paging::{MapError, Mapper, PageFlags},
-};
-use crate::{kassert, kassert_eq, kernel_test, test::TestKind};
+use crate::mm::{MapError, Mapper, PageFlags, VirtAddr};
+use crate::test::TestKind;
+use crate::{kassert, kassert_eq, kernel_test};
 
 // Helper
 fn virt(addr: usize) -> VirtAddr {

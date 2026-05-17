@@ -45,7 +45,6 @@ pub fn init() {
 /// Silently drops output if [`init`] has not been called yet.
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments<'_>) {
-    #[cfg(target_arch = "x86_64")]
     if let Some(uart) = SERIAL.lock().as_mut() {
         // Infallible: UART write never returns an error in our driver.
         let _ = uart.write_fmt(args);

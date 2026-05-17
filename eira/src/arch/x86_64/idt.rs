@@ -13,10 +13,11 @@
 //! all general-purpose registers, the CPU-pushed exception frame, CR2, CR3
 //! and the vector number.
 
-use super::gdt::{IST_BP, IST_DF, IST_GP, IST_MCE, IST_NMI, IST_PF, IST_SS, KCODE_SELECTOR};
-use crate::arch::Arch;
 use core::cell::UnsafeCell;
 use core::fmt;
+
+use super::gdt::{IST_BP, IST_DF, IST_GP, IST_MCE, IST_NMI, IST_PF, IST_SS, KCODE_SELECTOR};
+use crate::arch::Arch;
 
 /// Interrupt gate, DPL 0, present.
 ///

@@ -7,14 +7,16 @@
 //! directly out of the first usable physical memory region, *before* handing
 //! any memory to the allocator.
 
+use core::sync::atomic::{AtomicUsize, Ordering};
+
+use limine::memmap::MEMMAP_USABLE;
+use limine::request::{HhdmRespData, MemmapRespData, Response};
+use spin::Mutex;
+
 use super::addr::{PAGE_SIZE, PhysAddr};
 use super::allocator::FrameAllocator;
 use super::allocator::bitmap::BitmapAllocator;
 use super::frame::OwnedFrame;
-use core::sync::atomic::{AtomicUsize, Ordering};
-use limine::memmap::MEMMAP_USABLE;
-use limine::request::{HhdmRespData, MemmapRespData, Response};
-use spin::Mutex;
 
 /// The kernel-global physical frame allocator.
 ///

@@ -1,9 +1,8 @@
 //! PMM subsystem tests.
 
-use crate::mm;
 use crate::mm::{Frame4K, FrameRange, PAGE_SIZE, PhysAddr, PhysFrame, VirtAddr};
 use crate::test::{TestKind, TestResult};
-use crate::{kassert, kassert_eq, kernel_test};
+use crate::{kassert, kassert_eq, kernel_test, mm};
 
 // PhysAddr Construction
 

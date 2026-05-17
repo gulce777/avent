@@ -10,14 +10,12 @@
 //! conversions go through [`phys_to_virt`] which adds the HHDM offset. This
 //! mirrors how the bitmap allocator already works in `mm::init`.
 
-use super::{
-    entry::{EntryFlags, PageTableEntry, entry_flags_from_page_flags, page_flags_from_entry_flags},
-    table::{PageTable, PageTableLevel},
+use super::entry::{
+    EntryFlags, PageTableEntry, entry_flags_from_page_flags, page_flags_from_entry_flags,
 };
-use crate::mm::{
-    Frame4K, OwnedFrame, PhysAddr, VirtAddr,
-    paging::{MapError, Mapper, PageFlags, TlbFlush, UnmapError},
-};
+use super::table::{PageTable, PageTableLevel};
+use crate::mm::paging::{MapError, Mapper, PageFlags, TlbFlush, UnmapError};
+use crate::mm::{Frame4K, OwnedFrame, PhysAddr, VirtAddr};
 
 /// Convert a physical address to a kernel virtual pointer using the HHDM.
 ///

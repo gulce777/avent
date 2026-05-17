@@ -1,8 +1,6 @@
 //! Integration tests for [`AddressSpace`] and [`RegionAllocator`].
 
-use crate::mm::address_space::{AllocKind, KernelAddressSpace};
-use crate::mm::paging::PageFlags;
-use crate::mm::{self, PAGE_SIZE, VirtAddr};
+use crate::mm::{self, AllocKind, KernelAddressSpace, PAGE_SIZE, PageFlags, VirtAddr};
 use crate::test::{TestKind, TestResult};
 use crate::{kassert, kassert_eq, kernel_test};
 

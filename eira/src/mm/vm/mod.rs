@@ -2,8 +2,9 @@ pub mod region;
 #[cfg(feature = "kernel-tests")]
 pub mod tests;
 
-use crate::mm::addr::VirtAddr;
 pub use region::{Region, RegionAllocator};
+
+use crate::mm::addr::VirtAddr;
 
 /// Start of the kernel heap virtual region.
 ///

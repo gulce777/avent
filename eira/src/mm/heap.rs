@@ -283,7 +283,7 @@ impl HeapAllocator {
     /// - `size` and `align` must exactly match the values passed to that call.
     /// - `ptr` must not have been deallocated since.
     /// - No live references into `[ptr, ptr + size)` may exist after this call.
-    pub unsafe fn dealloc(&mut self, ptr: NonNull<u8>, size: usize, align: usize) {
+    pub unsafe fn dealloc(&mut self, ptr: NonNull<u8>, size: usize, _align: usize) {
         let block_size = size.max(MIN_BLOCK_SIZE).next_multiple_of(BLOCK_ALIGN);
 
         let block = unsafe { NonNull::new_unchecked(ptr.as_ptr() as *mut FreeBlock) };
@@ -396,7 +396,7 @@ impl LockedHeap {
         Self(spin::Mutex::new(HeapAllocator::new()))
     }
 
-    pub fn lock(&self) -> spin::MutexGuard<HeapAllocator> {
+    pub fn lock(&self) -> spin::MutexGuard<'_, HeapAllocator> {
         self.0.lock()
     }
 }
