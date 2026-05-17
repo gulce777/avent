@@ -6,6 +6,7 @@
 //! `Unit` -> `Physical` -> `Arch` -> `Integration`
 
 use super::{TestCase, TestKind, TestResult};
+use crate::arch::{Arch, Platform};
 
 const RESET: &str = "\x1B[0m";
 const DIM: &str = "\x1B[2m";
@@ -72,6 +73,7 @@ impl Counts {
 /// [`TestResult::Fail`] rather than bringing down the kernel.
 ///
 pub fn run_all() -> ! {
+    Platform::disable_interrupts();
     let all = all_tests();
 
     crate::println!("\n{BOLD}eira test run. running {} tests.{RESET}", all.len());

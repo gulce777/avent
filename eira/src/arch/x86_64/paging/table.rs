@@ -73,7 +73,6 @@ pub struct PageTable {
     entries: [PageTableEntry; ENTRY_COUNT],
 }
 
-// Compile-time size check — a page table must fit in one 4 KiB frame.
 const _: () = assert!(
     core::mem::size_of::<PageTable>() == 4096,
     "PageTable must be exactly 4096 bytes"

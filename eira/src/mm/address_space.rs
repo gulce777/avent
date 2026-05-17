@@ -372,30 +372,13 @@ impl<M: Mapper> AddressSpace<M> {
     #[allow(dead_code)]
     pub fn map_physical_range(
         &mut self,
-        frames: impl Iterator<Item = OwnedFrame>,
+        frames: impl ExactSizeIterator<Item = OwnedFrame>,
         align: usize,
         flags: PageFlags,
         kind: AllocKind,
     ) -> Result<Region, AddressSpaceError> {
-        // Collect eagerly so we know the count before reserving VA space.
-        // In a no-alloc environment the caller must pass an `ExactSizeIterator`
-        // and we could avoid the collection, but correctness is the priority
-        // here; optimise when the heap exists.
-        //
-        // For now we iterate once to count, then re-use the frames.
-        // Since we don't have a heap, we use a fixed-size array, the maximum
-        // sensible MMIO mapping is bounded by the VM region size.
-        //
-        // A simpler approach: require `ExactSizeIterator`.
-        let mut frame_buf: [core::mem::MaybeUninit<OwnedFrame>; 512] =
-            unsafe { core::mem::MaybeUninit::uninit().assume_init() };
-        let mut count = 0usize;
-
-        for frame in frames {
-            assert!(count < 512, "map_physical_range: too many frames (max 512)");
-            frame_buf[count].write(frame);
-            count += 1;
-        }
+        let count = frames.len();
+        assert!(count > 0, "map_physical_range: frame iterator is empty");
 
         let size = count
             .checked_mul(PAGE_SIZE)
@@ -404,11 +387,8 @@ impl<M: Mapper> AddressSpace<M> {
         let region = self.alloc_virt(size, align, kind)?;
         let base_raw = region.base.as_usize();
 
-        for i in 0..count {
+        for (i, frame) in frames.enumerate() {
             let virt = unsafe { VirtAddr::new_unchecked(base_raw + i * PAGE_SIZE) };
-            // SAFETY: we initialised indices [0, count).
-            let frame = unsafe { frame_buf[i].assume_init_read() };
-
             let req = MapRequest { virt, frame, flags };
 
             match self.map(req) {
@@ -421,7 +401,7 @@ impl<M: Mapper> AddressSpace<M> {
                         .deallocate_owned(frame);
                     self.rollback_range(region.base, i);
                     self.free_virt(region, kind)
-                        .expect("VA region free during rollback cannot fail");
+                        .expect("va region free during rollback cannot fail");
                     return Err(e);
                 }
             }

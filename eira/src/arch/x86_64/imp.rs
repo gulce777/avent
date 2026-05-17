@@ -25,10 +25,28 @@ impl Arch for X86_64 {
         unsafe { core::arch::asm!("cli", options(nomem, nostack)) };
     }
 
+    fn enable_interrupts() {
+        // SAFETY: valid in ring 0.
+        unsafe {
+            core::arch::asm!("sti", options(nomem, nostack));
+        }
+    }
+
     fn init_cpu() {
         unsafe { BSP_TABLES.load() };
 
         unsafe { IDT.load() };
+
+        unsafe {
+            super::pic::disable_lapic();
+            super::pic::init();
+            super::pic::init_pit();
+        };
+    }
+
+    fn register_irq(irq: u32, handler: fn()) {
+        assert!(irq <= u8::MAX as u32, "x86_64 IRQ number too large");
+        crate::arch::x86_64::irq::register_irq(irq as u8, handler);
     }
 
     fn flush_tlb_page(addr: VirtAddr) {

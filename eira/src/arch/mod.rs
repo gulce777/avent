@@ -12,7 +12,7 @@
 use crate::mm::VirtAddr;
 
 #[cfg(target_arch = "x86_64")]
-mod x86_64;
+pub mod x86_64;
 #[cfg(target_arch = "x86_64")]
 pub use x86_64::enable_sse;
 #[cfg(target_arch = "x86_64")]
@@ -53,6 +53,10 @@ pub trait Arch {
     /// After this returns, no external interrupts will be delivered until
     /// they are explicitly re-enabled.
     fn disable_interrupts();
+
+    fn enable_interrupts();
+
+    fn register_irq(irq: u32, handler: fn());
 
     /// Perform one-time, per-CPU hardware initialisation.
     ///

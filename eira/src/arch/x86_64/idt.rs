@@ -17,6 +17,8 @@ use core::cell::UnsafeCell;
 use core::fmt;
 
 use super::gdt::{IST_BP, IST_DF, IST_GP, IST_MCE, IST_NMI, IST_PF, IST_SS, KCODE_SELECTOR};
+use super::irq::{self, IRQ_BASE};
+use super::pic;
 use crate::arch::Arch;
 
 /// Interrupt gate, DPL 0, present.
@@ -71,7 +73,7 @@ impl IdtEntry {
 /// The kernel IDT.
 #[repr(C, align(16))]
 pub struct Idt {
-    entries: UnsafeCell<[IdtEntry; 32]>,
+    entries: UnsafeCell<[IdtEntry; 256]>,
 }
 
 // SAFETY: Only ever accessed from the owning CPU after init.
@@ -87,7 +89,7 @@ impl Idt {
     /// Build and populate the IDT with all 32 exception handlers.
     pub const fn new() -> Self {
         Self {
-            entries: UnsafeCell::new([IdtEntry::missing(); 32]),
+            entries: UnsafeCell::new([IdtEntry::missing(); 256]),
         }
     }
 
@@ -154,6 +156,8 @@ impl Idt {
         self.set(29, isr_stub_29, 0);
         self.set(30, isr_stub_30, 0);
         self.set(31, isr_stub_31, 0);
+        self.set(32, isr_stub_32, 0);
+        self.set(33, isr_stub_33, 0);
     }
 }
 
@@ -371,7 +375,22 @@ fn exception_name(vector: u8) -> &'static str {
 ///
 /// `frame` must point to a valid [`ExceptionFrame`] on the exception stack.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn exception_handler(frame: &ExceptionFrame) {
+pub unsafe extern "C" fn trap_handler(frame: &ExceptionFrame) {
+    let vector = frame.vector as u8;
+
+    if vector < IRQ_BASE {
+        handle_cpu_exception(frame);
+    } else {
+        let irq_line = vector - IRQ_BASE;
+
+        irq::dispatch(irq_line);
+
+        unsafe { pic::send_eoi(irq_line) };
+    }
+}
+
+#[cold]
+fn handle_cpu_exception(frame: &ExceptionFrame) -> ! {
     crate::arch::Platform::disable_interrupts();
     crate::print!("{}", frame);
     loop {
@@ -408,8 +427,10 @@ core::arch::global_asm!(
     "mov rax, cr2",
     "push rax",
     "mov rdi, rsp",
-    "and rsp, ~0xF",
-    "call exception_handler",
+    "mov rbx, rsp",
+    "and rsp, -16",
+    "call trap_handler",
+    "mov rsp, rbx",
     "pop rax",
     "pop rax",
     "pop r15",
@@ -488,6 +509,9 @@ isr_with_err!(isr_stub_29, 29);
 isr_with_err!(isr_stub_30, 30);
 isr_no_err!(isr_stub_31, 31);
 
+isr_no_err!(isr_stub_32, 32);
+isr_no_err!(isr_stub_33, 33);
+
 // Declare all stub symbols so Rust can take their addresses.
 unsafe extern "C" {
     fn isr_stub_0();
@@ -522,4 +546,6 @@ unsafe extern "C" {
     fn isr_stub_29();
     fn isr_stub_30();
     fn isr_stub_31();
+    fn isr_stub_32();
+    fn isr_stub_33();
 }

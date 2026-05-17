@@ -53,6 +53,10 @@ static HHDM_REQUEST: HhdmRequest = HhdmRequest::new();
 #[unsafe(link_section = ".requests_end")]
 static _REQUESTS_END: RequestsEndMarker = RequestsEndMarker::new();
 
+fn timer_tick() {
+    println!("tick");
+}
+
 /// Main kernel entry point.
 ///
 /// # Safety
@@ -68,6 +72,8 @@ pub extern "C" fn kmain() -> ! {
 
     logger::init();
     Platform::init_cpu();
+
+    Platform::register_irq(0, timer_tick);
 
     let memmap = MEMORY_MAP_REQUEST
         .response()
@@ -104,20 +110,12 @@ pub extern "C" fn kmain() -> ! {
 
     log::info!("kernel heap initialised with {} bytes", heap_size);
 
-    let mut test_vec = Vec::new();
-    for i in 0..500 {
-        test_vec.push(i);
-    }
-
-    let test_box = Box::new("eira kernel");
-
-    log::info!("vec length: {}, box: {}", test_vec.len(), test_box);
-
     #[cfg(feature = "kernel-tests")]
     crate::test::runner::run_all();
 
     log::info!("halting");
     loop {
+        Platform::enable_interrupts();
         Platform::halt();
     }
 }
