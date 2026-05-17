@@ -3,10 +3,12 @@
 //! Provides the building blocks for all memory operations in the kernel.
 
 pub mod addr;
+pub mod address_space;
 pub mod allocator;
 pub mod frame;
 pub mod init;
 pub mod paging;
+pub mod vm;
 
 #[cfg(feature = "kernel-tests")]
 mod tests;

@@ -11,6 +11,8 @@ static IDT: Idt = Idt::new();
 pub struct X86_64;
 
 impl Arch for X86_64 {
+    type Mapper = super::paging::mapper::PageTableMapper;
+
     #[inline]
     fn halt() {
         // SAFETY: valid in ring 0.
@@ -39,16 +41,38 @@ impl Arch for X86_64 {
         }
     }
 
+    unsafe fn create_mapper(root: crate::mm::OwnedFrame) -> Self::Mapper {
+        let hhdm = crate::mm::init::hhdm_offset();
+
+        unsafe {
+            let ptr = (root.base().as_usize() + hhdm) as *mut u8;
+            core::ptr::write_bytes(ptr, 0, crate::mm::PAGE_SIZE);
+        }
+
+        let raw_frame = unsafe { root.into_inner() };
+
+        // SAFETY: `raw_frame` is zeroed, page-aligned and exclusively owned.
+        unsafe { super::paging::mapper::PageTableMapper::new(raw_frame, hhdm) }
+    }
+
+    unsafe fn mapper_from_active(root_phys: crate::mm::PhysAddr) -> Self::Mapper {
+        use crate::mm::PhysFrame;
+
+        let hhdm = crate::mm::init::hhdm_offset();
+
+        let raw_frame =
+            PhysFrame::from_base(root_phys).expect("active PML4 base address must be page-aligned");
+
+        // SAFETY: forwarded from caller. The bootloader guarantees a valid,
+        // loaded PML4 at `root_phys`.
+        unsafe { super::paging::mapper::PageTableMapper::new(raw_frame, hhdm) }
+    }
+
     #[cfg(feature = "kernel-tests")]
     fn new_test_mapper() -> impl crate::mm::paging::Mapper {
         let pml4 = crate::mm::allocate();
         let hhdm = crate::mm::init::hhdm_offset();
-        unsafe {
-            let base = pml4.base();
-            let ptr = (base.as_usize() + hhdm) as *mut u8;
-            core::ptr::write_bytes(ptr, 0, crate::mm::PAGE_SIZE);
-            let raw_pml4 = pml4.into_inner();
-            super::paging::mapper::PageTableMapper::new(raw_pml4, hhdm)
-        }
+        // SAFETY: fresh frame, correct HHDM. see `create_mapper`
+        unsafe { Self::create_mapper(pml4) }
     }
 }

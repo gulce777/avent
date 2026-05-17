@@ -52,4 +52,22 @@ pub trait FrameAllocator {
     fn used_frames(&self) -> usize {
         self.total_frames() - self.free_frames()
     }
+
+    /// Return an [`OwnedFrame`] to the allocator, consuming it.
+    ///
+    /// This is the preferred safe wrapper around [`deallocate`](Self::deallocate).
+    /// It extracts the raw [`PhysFrame`] from the `OwnedFrame` (bypassing the
+    /// drop-panic) and passes it to `deallocate`.
+    ///
+    /// # Safety
+    ///
+    /// The same invariants as [`deallocate`](Self::deallocate) apply.
+    #[inline]
+    fn deallocate_owned(&mut self, frame: OwnedFrame) {
+        // SAFETY: We immediately pass the raw frame to `deallocate`, which is
+        // the allocator that originally issued it (callers are responsible for
+        // pairing allocations with the correct allocator).
+        let raw = unsafe { frame.into_inner() };
+        unsafe { self.deallocate(raw) };
+    }
 }

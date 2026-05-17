@@ -9,6 +9,9 @@ mod serial;
 mod test;
 
 use crate::arch::{Arch, Platform};
+use crate::mm::PAGE_SIZE;
+use crate::mm::address_space::{AddressSpace, KernelAddressSpace};
+use crate::mm::paging::PageFlags;
 use limine::request::{FramebufferRequest, HhdmRequest, MemmapRequest, StackSizeRequest};
 use limine::{BaseRevision, RequestsEndMarker, RequestsStartMarker};
 
@@ -61,40 +64,16 @@ pub extern "C" fn kmain() -> ! {
         .expect("no memory map response");
     let hhdm = HHDM_REQUEST.response().expect("no HHDM response");
 
-    unsafe { mm::init::init(memmap, hhdm) };
-
-    #[cfg(feature = "kernel-tests")]
-    crate::test::runner::run_all();
-
     if BASE_REVISION.is_supported() {
         log::debug!("limine base revision supported");
     } else {
         panic!("incompatible bootloader: limine base revision is not supported");
     }
 
-    if let Some(response) = FRAMEBUFFER_REQUEST.response() {
-        let fbs = response.framebuffers();
+    unsafe { mm::init::init(memmap, hhdm) };
 
-        if let Some(fb) = fbs.first() {
-            let pitch = fb.pitch as usize;
-            let bpp = (fb.bpp / 8) as usize;
-
-            // SAFETY: Limine guarantees `fb.address()` is a valid, mapped,
-            // writable pointer to framebuffer memory for the lifetime of the
-            // bootloader-reclaimable region.
-            let fb_ptr = fb.address() as *mut u8;
-
-            unsafe { draw_rect(fb_ptr, pitch, bpp, 100, 100, 200, 200, 0xFF_FF_FF_FF) };
-        }
-    }
-
-    #[cfg(target_arch = "aarch64")]
-    // SAFETY: `dsb sy` is a memory barrier with no side effects beyond ordering.
-    unsafe {
-        core::arch::asm!("dsb sy", options(nostack, nomem));
-    }
-
-    unsafe { core::ptr::read_volatile(0xdead_bee8 as *const u64) };
+    #[cfg(feature = "kernel-tests")]
+    crate::test::runner::run_all();
 
     log::info!("halting");
     loop {
